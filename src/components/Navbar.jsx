@@ -90,7 +90,7 @@ function Navbar({ activeSection, onNavClick, isDark, onToggleTheme, language, on
         >
           <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg border border-cyan-400/30">
             <img
-              src="/salman-profile.jpeg"
+              src="./salman-profile.jpeg"
               alt="Salman Profile"
               className="h-full w-full object-cover"
             />

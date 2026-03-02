@@ -370,7 +370,7 @@ function Hero({ isDark = true, onViewProjects, language = 'en' }) {
                 {/* Inner ring overlay */}
                 <div className="absolute inset-0 z-10 rounded-full ring-1 ring-inset ring-cyan-400/20" />
                 <img
-                  src="/salman-ceo.jpg"
+                  src="./salman-ceo.jpg"
                   alt="Salman Alfarisi Rizwana"
                   className="h-full w-full object-cover scale-150"
                 />

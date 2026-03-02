@@ -24,7 +24,7 @@ const cleanSample = [
 ]
 
 // ── Dashboard URL (file lives in /public/cafe_dashboard.html) ────────────────
-const DASHBOARD_URL = '/cafe_dashboard.html'
+const DASHBOARD_URL = './cafe_dashboard.html'
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
 const statsEn = [
