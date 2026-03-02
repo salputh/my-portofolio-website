@@ -1,0 +1,1764 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>☕ Café Sales Dashboard 2023</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f0e0d;
+      --surface: #1a1815;
+      --card: #221f1c;
+      --border: #2e2a26;
+      --gold: #c9a84c;
+      --gold-light: #e8c97a;
+      --cream: #f0e6d3;
+      --muted: #7a7068;
+      --green: #6bbf8e;
+      --rose: #e07b6a;
+      --blue: #6b9bbf;
+      --lavender: #9b8bbf;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* HEADER */
+    header {
+      position: relative;
+      padding: 3rem 3rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, #1a1815 0%, #0f0e0d 60%, #1c1409 100%);
+      overflow: hidden;
+    }
+
+    header::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(201, 168, 76, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    header::after {
+      content: '☕';
+      position: absolute;
+      right: 3rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 5rem;
+      opacity: 0.06;
+      filter: blur(2px);
+    }
+
+    .header-top {
+      display: flex;
+      align-items: flex-end;
+      gap: 1.5rem;
+    }
+
+    .header-badge {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold);
+      background: rgba(201, 168, 76, 0.1);
+      border: 1px solid rgba(201, 168, 76, 0.25);
+      padding: 0.3rem 0.75rem;
+      border-radius: 2px;
+      margin-bottom: 0.5rem;
+      display: inline-block;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      font-weight: 900;
+      color: var(--cream);
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    h1 span {
+      color: var(--gold);
+    }
+
+    .header-sub {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+      letter-spacing: 0.03em;
+    }
+
+    /* KPI STRIP */
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .kpi {
+      background: var(--surface);
+      padding: 1.75rem 2rem;
+      position: relative;
+      transition: background 0.2s;
+    }
+
+    .kpi:hover {
+      background: var(--card);
+    }
+
+    .kpi-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.6rem;
+    }
+
+    .kpi-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--cream);
+      line-height: 1;
+    }
+
+    .kpi-value.gold {
+      color: var(--gold);
+    }
+
+    .kpi-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.4rem;
+    }
+
+    .kpi-accent {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--gold), transparent);
+      width: 0;
+      transition: width 0.6s ease;
+    }
+
+    .kpi:hover .kpi-accent {
+      width: 100%;
+    }
+
+    /* MAIN GRID */
+    .main {
+      padding: 2rem 2.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* NAV TABS */
+    .tab-nav {
+      display: flex;
+      gap: 0.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.3rem;
+      width: fit-content;
+      max-width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      flex-shrink: 0;
+    }
+
+    .tab-nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tab-btn {
+      padding: 0.5rem 1.2rem;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .tab-btn:hover {
+      color: var(--cream);
+    }
+
+    .tab-btn.active {
+      background: var(--gold);
+      color: #0f0e0d;
+      font-weight: 600;
+    }
+
+    /* PANELS */
+    .panel {
+      display: none;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .panel.active {
+      display: flex;
+    }
+
+    /* CARDS */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem 1.75rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(201, 168, 76, 0.3), transparent);
+    }
+
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--cream);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-title .icon {
+      font-size: 1rem;
+      opacity: 0.7;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.5rem;
+    }
+
+    /* CHART WRAPPERS */
+    .chart-wrap {
+      position: relative;
+      height: 280px;
+    }
+
+    .chart-wrap.tall {
+      height: 340px;
+    }
+
+    .chart-wrap.short {
+      height: 220px;
+    }
+
+    /* ITEM BARS */
+    .item-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .item-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .item-name {
+      font-size: 0.8rem;
+      color: var(--cream);
+      width: 70px;
+      flex-shrink: 0;
+    }
+
+    .item-bar-wrap {
+      flex: 1;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .item-bar {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .item-val {
+      font-size: 0.75rem;
+      color: var(--muted);
+      width: 60px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* DONUT LEGEND */
+    .donut-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .legend-label {
+      font-size: 0.78rem;
+      color: var(--cream);
+      flex: 1;
+    }
+
+    .legend-pct {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    /* STAT PILLS */
+    .stat-row {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.6rem 1rem;
+      flex: 1;
+      min-width: 100px;
+    }
+
+    .stat-pill-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .stat-pill-val {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      color: var(--gold);
+      margin-top: 0.1rem;
+    }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    /* ANIMATIONS */
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .panel.active .card {
+      animation: fadeUp 0.4s ease backwards;
+    }
+
+    .panel.active .card:nth-child(2) {
+      animation-delay: 0.08s;
+    }
+
+    .panel.active .card:nth-child(3) {
+      animation-delay: 0.16s;
+    }
+
+    /* DATA EXPLORER STYLES */
+    .df-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      align-items: center;
+      background: var(--card);
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .df-toggle-wrap {
+      display: flex;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 4px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    .df-toggle-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      padding: 0.5rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .df-toggle-btn.active {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--cream);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .df-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .dirty-dot {
+      background: var(--rose);
+    }
+
+    .clean-dot {
+      background: var(--green);
+    }
+
+    .df-badge {
+      font-size: 0.65rem;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 4px;
+      opacity: 0.7;
+    }
+
+    .df-search,
+    .df-select {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border);
+      color: var(--cream);
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .df-search {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .df-select {
+      min-width: 140px;
+      cursor: pointer;
+    }
+
+    .df-search:focus,
+    .df-select:focus {
+      border-color: var(--gold);
+    }
+
+    .df-stats-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .df-stat-cell {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 1rem;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .df-stat-label {
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.4rem;
+    }
+
+    .df-stat-val {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      color: var(--cream);
+    }
+
+    .df-stat-val.ev {
+      color: var(--rose);
+    }
+
+    .df-stat-val.gv {
+      color: var(--green);
+    }
+
+    .df-table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .df-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+
+    .df-table th {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--muted);
+      font-weight: 600;
+      text-align: left;
+      padding: 0.8rem 1rem;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s;
+    }
+
+    .df-table th:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--cream);
+    }
+
+    .df-table th.sa::after {
+      content: ' ↑';
+      color: var(--gold);
+    }
+
+    .df-table th.sd::after {
+      content: ' ↓';
+      color: var(--gold);
+    }
+
+    .df-table td {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      color: #ccc;
+    }
+
+    .df-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .df-idx {
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-align: center;
+      width: 40px;
+    }
+
+    /* Cell Highlighting */
+    .ce {
+      background: rgba(224, 123, 106, 0.15);
+      color: var(--rose) !important;
+      font-weight: 600;
+    }
+
+    .cem {
+      background: rgba(224, 123, 106, 0.08);
+      color: var(--rose) !important;
+      font-style: italic;
+    }
+
+    .cn {
+      font-family: 'DM Mono', monospace;
+      color: var(--gold) !important;
+    }
+
+    .ci {
+      font-weight: 600;
+      color: var(--cream) !important;
+    }
+
+    .cpd {
+      color: var(--blue) !important;
+    }
+
+    .cpc {
+      color: var(--green) !important;
+    }
+
+    .cpp {
+      color: var(--rose) !important;
+    }
+
+    .clin {
+      color: var(--lav) !important;
+    }
+
+    .clta {
+      color: var(--orange) !important;
+    }
+
+    .df-pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem;
+      border-top: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .df-pb {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: inherit;
+    }
+
+    .df-pb:hover:not(:disabled) {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .df-pb.ap {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: #000;
+      font-weight: bold;
+    }
+
+    .df-pb:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .df-pi {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin: 0 0.5rem;
+    }
+
+    /* ── MOBILE RESPONSIVE ───────────────────────────────────────── */
+
+    /* Tablet: 768px and below */
+    @media (max-width: 768px) {
+
+      /* Header */
+      header {
+        padding: 1.5rem 1.25rem 1.25rem;
+      }
+
+      header::after {
+        display: none;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+      }
+
+      /* KPI Strip: 2x2 grid */
+      .kpi-strip {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .kpi {
+        padding: 1.25rem 1.25rem;
+      }
+
+      .kpi-value {
+        font-size: 1.5rem;
+      }
+
+      /* Main padding */
+      .main {
+        padding: 1rem 1rem;
+        gap: 1rem;
+      }
+
+      /* Tab nav: already scrollable via base styles */
+
+      /* Grids: single column */
+      .grid-2,
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+
+      /* Chart heights */
+      .chart-wrap {
+        height: 220px;
+      }
+
+      .chart-wrap.tall {
+        height: 260px;
+      }
+
+      .chart-wrap.short {
+        height: 180px;
+      }
+
+      /* Item name width */
+      .item-name {
+        width: 60px;
+        font-size: 0.75rem;
+      }
+
+      /* Data explorer controls: stack vertically */
+      .df-controls {
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 0.75rem;
+      }
+
+      .df-search {
+        width: 100%;
+        min-width: unset;
+      }
+
+      .df-select {
+        width: 100%;
+        min-width: unset;
+      }
+
+      .df-toggle-wrap {
+        width: 100%;
+        justify-content: stretch;
+      }
+
+      .df-toggle-btn {
+        flex: 1;
+        justify-content: center;
+        font-size: 0.75rem;
+        padding: 0.5rem 0.6rem;
+      }
+
+      /* Data panel: inside main on mobile */
+      #panel-data {
+        padding: 0 0 1rem 0;
+      }
+
+      /* Stats bar: 2-3 cols */
+      .df-stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+
+      /* Pagination: compact */
+      .df-pagination {
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        padding: 0.75rem;
+      }
+
+      .df-pb {
+        width: 28px;
+        height: 28px;
+        font-size: 0.75rem;
+      }
+    }
+
+    /* Mobile: 480px and below */
+    @media (max-width: 480px) {
+
+      /* Header */
+      header {
+        padding: 1.25rem 1rem 1rem;
+      }
+
+      .header-badge {
+        font-size: 0.6rem;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      .header-sub {
+        font-size: 0.75rem;
+      }
+
+      /* KPI: single column */
+      .kpi-strip {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .kpi {
+        padding: 1rem;
+      }
+
+      .kpi-label {
+        font-size: 0.62rem;
+      }
+
+      .kpi-value {
+        font-size: 1.3rem;
+      }
+
+      .kpi-sub {
+        font-size: 0.65rem;
+      }
+
+      /* Main */
+      .main {
+        padding: 0.75rem 0.75rem;
+      }
+
+      /* Card */
+      .card {
+        padding: 1rem 1rem;
+      }
+
+      .card-title {
+        font-size: 0.85rem;
+        margin-bottom: 0.75rem;
+      }
+
+      /* Charts shorter on small phones */
+      .chart-wrap {
+        height: 190px;
+      }
+
+      .chart-wrap.tall {
+        height: 220px;
+      }
+
+      .chart-wrap.short {
+        height: 160px;
+      }
+
+      /* Stat pills: 2 cols */
+      .stat-row {
+        gap: 0.5rem;
+      }
+
+      .stat-pill {
+        padding: 0.5rem 0.75rem;
+        min-width: 80px;
+      }
+
+      .stat-pill-val {
+        font-size: 1.1rem;
+      }
+
+      /* Item bars */
+      .item-name {
+        width: 52px;
+        font-size: 0.7rem;
+      }
+
+      .item-val {
+        font-size: 0.7rem;
+        width: 50px;
+      }
+
+      /* Legend */
+      .legend-label {
+        font-size: 0.72rem;
+      }
+
+      .legend-pct {
+        font-size: 0.72rem;
+      }
+
+      /* Data explorer */
+      .df-stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .df-stat-val {
+        font-size: 1.1rem;
+      }
+
+      /* Table: tighter */
+      .df-table {
+        font-size: 0.72rem;
+      }
+
+      .df-table th,
+      .df-table td {
+        padding: 0.55rem 0.65rem;
+      }
+
+      /* Pagination */
+      .df-pi {
+        font-size: 0.7rem;
+        margin: 0 0.25rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="header-top">
+      <div>
+        <div class="header-badge">Sales Intelligence</div>
+        <h1>Café <span>Analytics</span></h1>
+        <p class="header-sub">Fiscal Year 2023 · 8,593 Net Transactions</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="kpi-strip">
+    <div class="kpi">
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value gold">$76,831</div>
+      <div class="kpi-sub">January – December 2023</div>
+      <div class="kpi-accent"></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Total Transactions</div>
+      <div class="kpi-value">8,593</div>
+      <div class="kpi-sub">~23.5 transactions/day</div>
+      <div class="kpi-accent"></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Avg. per Transaction</div>
+      <div class="kpi-value">$8.94</div>
+      <div class="kpi-sub">Average order value</div>
+      <div class="kpi-accent"></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Best-Selling Item</div>
+      <div class="kpi-value">Salad</div>
+      <div class="kpi-sub">$16,575 revenue total</div>
+      <div class="kpi-accent"></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('tren')">📈 Sales Trend</button>
+      <button class="tab-btn" onclick="switchTab('item')">🍽 Items</button>
+      <button class="tab-btn" onclick="switchTab('payment')">💳 Payment</button>
+      <button class="tab-btn" onclick="switchTab('lokasi')">📍 Location</button>
+      <button class="tab-btn" onclick="switchTab('data')">📂 Raw Data</button>
+    </div>
+
+    <!-- TREN -->
+    <div class="panel active" id="panel-tren">
+      <div class="card">
+        <div class="card-title"><span class="icon">📊</span>Monthly Revenue 2023</div>
+        <div class="chart-wrap tall">
+          <canvas id="chartMonthly"></canvas>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title"><span class="icon">📅</span>Daily Transactions (7-Day Rolling)</div>
+          <div class="chart-wrap">
+            <canvas id="chartDaily"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="icon">🏆</span>Best vs Worst Month</div>
+          <div class="stat-row">
+            <div class="stat-pill">
+              <div class="stat-pill-label">Highest</div>
+              <div class="stat-pill-val">Oct</div>
+            </div>
+            <div class="stat-pill">
+              <div class="stat-pill-label">Revenue</div>
+              <div class="stat-pill-val">$6,755</div>
+            </div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-pill">
+              <div class="stat-pill-label">Lowest</div>
+              <div class="stat-pill-val">Feb</div>
+            </div>
+            <div class="stat-pill">
+              <div class="stat-pill-label">Revenue</div>
+              <div class="stat-pill-val">$5,954</div>
+            </div>
+          </div>
+          <div class="chart-wrap short" style="margin-top:1rem">
+            <canvas id="chartMiniBar"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ITEM -->
+    <div class="panel" id="panel-item">
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-title"><span class="icon">💰</span>Revenue per Item</div>
+          <div class="item-bars" id="itemBars"></div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="icon">🔵</span>Share of Quantity Sold</div>
+          <div class="chart-wrap short">
+            <canvas id="chartDonut"></canvas>
+          </div>
+          <div class="donut-legend" id="donutLegend"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="icon">📊</span>Revenue vs Quantity per Item</div>
+        <div class="chart-wrap">
+          <canvas id="chartItemCompare"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYMENT -->
+    <div class="panel" id="panel-payment">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title"><span class="icon">📊</span>Transactions by Method</div>
+          <div class="chart-wrap tall">
+            <canvas id="chartPmBar"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="icon">🍩</span>Revenue Share</div>
+          <div class="chart-wrap">
+            <canvas id="chartPmDonut"></canvas>
+          </div>
+          <div class="donut-legend" id="pmLegend"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="icon">💡</span>Payment Method Summary</div>
+        <div class="stat-row">
+          <div class="stat-pill">
+            <div class="stat-pill-label">Digital Wallet</div>
+            <div class="stat-pill-val">54.6%</div>
+          </div>
+          <div class="stat-pill">
+            <div class="stat-pill-label">Cash</div>
+            <div class="stat-pill-val">22.7%</div>
+          </div>
+          <div class="stat-pill">
+            <div class="stat-pill-label">Credit Card</div>
+            <div class="stat-pill-val">22.6%</div>
+          </div>
+          <div class="stat-pill">
+            <div class="stat-pill-label">Total Revenue DW</div>
+            <div class="stat-pill-val">$41,519</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOKASI -->
+    <div class="panel" id="panel-lokasi">
+      <div class="card">
+        <div class="card-title"><span class="icon">📍</span>Monthly Revenue: In-store vs Takeaway</div>
+        <div class="chart-wrap tall">
+          <canvas id="chartLocMonthly"></canvas>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title"><span class="icon">🛒</span>Qty per Item: In-store vs Takeaway</div>
+          <div class="chart-wrap tall">
+            <canvas id="chartLocItem"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="icon">📊</span>Overall Split</div>
+          <div class="chart-wrap">
+            <canvas id="chartLocDonut"></canvas>
+          </div>
+          <div class="stat-row">
+            <div class="stat-pill">
+              <div class="stat-pill-label">Takeaway</div>
+              <div class="stat-pill-val">~69%</div>
+            </div>
+            <div class="stat-pill">
+              <div class="stat-pill-label">In-store</div>
+              <div class="stat-pill-val">~31%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- DATA PANEL -->
+    <div class="panel" id="panel-data">
+      <div class="df-controls">
+
+        <input class="df-search" id="dfSearch" type="text" placeholder="🔍 Search..." oninput="dfPage=1;dfRender()" />
+        <select class="df-select" id="dfFItem" onchange="dfPage=1;dfRender()">
+          <option value="">All Items</option>
+        </select>
+        <select class="df-select" id="dfFPay" onchange="dfPage=1;dfRender()">
+          <option value="">All Payment</option>
+        </select>
+        <select class="df-select" id="dfFLoc" onchange="dfPage=1;dfRender()">
+          <option value="">All Location</option>
+        </select>
+        <div class="df-toggle-wrap">
+          <button class="df-toggle-btn active" id="btnDirty" onclick="dfSwitchView('dirty')">
+            <span class="df-dot dirty-dot"></span> Raw / Dirty
+            <span class="df-badge" id="badgeDirty">100 rows</span>
+          </button>
+          <button class="df-toggle-btn" id="btnClean" onclick="dfSwitchView('clean')">
+            <span class="df-dot clean-dot"></span> Cleaned
+            <span class="df-badge" id="badgeClean">100 rows</span>
+          </button>
+        </div>
+        <span class="df-info" id="dfInfo"></span>
+      </div>
+      <div class="df-stats-bar" id="dfStatsBar"></div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="df-table-wrap">
+          <table class="df-table">
+            <thead id="dfThead"></thead>
+            <tbody id="dfTbody"></tbody>
+          </table>
+        </div>
+        <div class="df-pagination" id="dfPagination"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ── DATA ─────────────────────────────────────────────────────
+    const monthly = [{ "MonthKey": "2023-01", "Month": "Jan", "Revenue": 6690, "Txn": 742 }, { "MonthKey": "2023-02", "Month": "Feb", "Revenue": 5953.5, "Txn": 649 }, { "MonthKey": "2023-03", "Month": "Mar", "Revenue": 6526.5, "Txn": 743 }, { "MonthKey": "2023-04", "Month": "Apr", "Revenue": 6464.5, "Txn": 696 }, { "MonthKey": "2023-05", "Month": "May", "Revenue": 6220, "Txn": 695 }, { "MonthKey": "2023-06", "Month": "Jun", "Revenue": 6616, "Txn": 733 }, { "MonthKey": "2023-07", "Month": "Jul", "Revenue": 6175.5, "Txn": 717 }, { "MonthKey": "2023-08", "Month": "Aug", "Revenue": 6348, "Txn": 715 }, { "MonthKey": "2023-09", "Month": "Sep", "Revenue": 6208, "Txn": 706 }, { "MonthKey": "2023-10", "Month": "Oct", "Revenue": 6755, "Txn": 767 }, { "MonthKey": "2023-11", "Month": "Nov", "Revenue": 6438, "Txn": 720 }, { "MonthKey": "2023-12", "Month": "Dec", "Revenue": 6436, "Txn": 710 }];
+
+    const items = [{ "Item": "Salad", "Revenue": 16575, "Qty": 3315 }, { "Item": "Sandwich", "Revenue": 13068, "Qty": 3267 }, { "Item": "Smoothie", "Revenue": 12776, "Qty": 3194 }, { "Item": "Juice", "Revenue": 10023, "Qty": 3341 }, { "Item": "Cake", "Revenue": 9834, "Qty": 3278 }, { "Item": "Coffee", "Revenue": 6814, "Qty": 3407 }, { "Item": "Tea", "Revenue": 4665, "Qty": 3110 }, { "Item": "Cookie", "Revenue": 3076, "Qty": 3076 }];
+
+    const pm = [{ "Payment Method": "Digital Wallet", "Count": 4695, "Revenue": 41519 }, { "Payment Method": "Cash", "Count": 1952, "Revenue": 17744.5 }, { "Payment Method": "Credit Card", "Count": 1946, "Revenue": 17567.5 }];
+
+    const locMonthly = { "Jan": { "Instore": 2113.5, "Takeaway": 4576.5 }, "Feb": { "Instore": 1835, "Takeaway": 4118.5 }, "Mar": { "Instore": 1967, "Takeaway": 4559.5 }, "Apr": { "Instore": 1979.5, "Takeaway": 4485 }, "May": { "Instore": 1698, "Takeaway": 4522 }, "Jun": { "Instore": 2048, "Takeaway": 4568 }, "Jul": { "Instore": 1949.5, "Takeaway": 4226 }, "Aug": { "Instore": 1866.5, "Takeaway": 4481.5 }, "Sep": { "Instore": 1930, "Takeaway": 4278 }, "Oct": { "Instore": 2016.5, "Takeaway": 4738.5 }, "Nov": { "Instore": 2127.5, "Takeaway": 4310.5 }, "Dec": { "Instore": 1974.5, "Takeaway": 4461.5 } };
+
+    const itemLoc = { "Cake": { "Instore": 939, "Takeaway": 2339 }, "Coffee": { "Instore": 925, "Takeaway": 2482 }, "Cookie": { "Instore": 926, "Takeaway": 2150 }, "Juice": { "Instore": 1056, "Takeaway": 2285 }, "Salad": { "Instore": 1077, "Takeaway": 2238 }, "Sandwich": { "Instore": 1086, "Takeaway": 2181 }, "Smoothie": { "Instore": 904, "Takeaway": 2290 }, "Tea": { "Instore": 933, "Takeaway": 2177 } };
+
+    const daily = [{ "Day": "2023-01-01", "Count": 19, "Revenue": 164 }, { "Day": "2023-01-02", "Count": 19, "Revenue": 166.5 }, { "Day": "2023-01-03", "Count": 18, "Revenue": 179 }, { "Day": "2023-01-04", "Count": 24, "Revenue": 236.5 }, { "Day": "2023-01-05", "Count": 36, "Revenue": 353 }, { "Day": "2023-01-06", "Count": 29, "Revenue": 228.5 }, { "Day": "2023-01-07", "Count": 23, "Revenue": 137.5 }, { "Day": "2023-01-08", "Count": 24, "Revenue": 288.5 }, { "Day": "2023-01-09", "Count": 21, "Revenue": 189 }, { "Day": "2023-01-10", "Count": 26, "Revenue": 236.5 }, { "Day": "2023-01-11", "Count": 20, "Revenue": 169 }, { "Day": "2023-01-12", "Count": 29, "Revenue": 268.5 }, { "Day": "2023-01-13", "Count": 21, "Revenue": 231 }, { "Day": "2023-01-14", "Count": 28, "Revenue": 238 }, { "Day": "2023-01-15", "Count": 22, "Revenue": 202.5 }, { "Day": "2023-01-16", "Count": 25, "Revenue": 228.5 }, { "Day": "2023-01-17", "Count": 27, "Revenue": 269 }, { "Day": "2023-01-18", "Count": 22, "Revenue": 188 }, { "Day": "2023-01-19", "Count": 16, "Revenue": 121 }, { "Day": "2023-01-20", "Count": 18, "Revenue": 168.5 }, { "Day": "2023-01-21", "Count": 25, "Revenue": 232.5 }, { "Day": "2023-01-22", "Count": 22, "Revenue": 179 }, { "Day": "2023-01-23", "Count": 22, "Revenue": 207.5 }, { "Day": "2023-01-24", "Count": 13, "Revenue": 137 }, { "Day": "2023-01-25", "Count": 34, "Revenue": 285 }, { "Day": "2023-01-26", "Count": 23, "Revenue": 147 }, { "Day": "2023-01-27", "Count": 24, "Revenue": 211 }, { "Day": "2023-01-28", "Count": 28, "Revenue": 280 }, { "Day": "2023-01-29", "Count": 31, "Revenue": 237.5 }, { "Day": "2023-01-30", "Count": 30, "Revenue": 306 }, { "Day": "2023-01-31", "Count": 23, "Revenue": 204.5 }, { "Day": "2023-02-01", "Count": 24, "Revenue": 198.5 }, { "Day": "2023-02-02", "Count": 15, "Revenue": 143.5 }, { "Day": "2023-02-03", "Count": 24, "Revenue": 219 }, { "Day": "2023-02-04", "Count": 23, "Revenue": 190 }, { "Day": "2023-02-05", "Count": 22, "Revenue": 208.5 }, { "Day": "2023-02-06", "Count": 32, "Revenue": 234.5 }, { "Day": "2023-02-07", "Count": 26, "Revenue": 207.5 }, { "Day": "2023-02-08", "Count": 19, "Revenue": 138.5 }, { "Day": "2023-02-09", "Count": 21, "Revenue": 194.5 }, { "Day": "2023-02-10", "Count": 26, "Revenue": 252 }, { "Day": "2023-02-11", "Count": 21, "Revenue": 244 }, { "Day": "2023-02-12", "Count": 20, "Revenue": 180.5 }, { "Day": "2023-02-13", "Count": 24, "Revenue": 206 }, { "Day": "2023-02-14", "Count": 16, "Revenue": 129 }, { "Day": "2023-02-15", "Count": 32, "Revenue": 303.5 }, { "Day": "2023-02-16", "Count": 26, "Revenue": 260 }, { "Day": "2023-02-17", "Count": 13, "Revenue": 117 }, { "Day": "2023-02-18", "Count": 22, "Revenue": 227 }, { "Day": "2023-02-19", "Count": 28, "Revenue": 276.5 }, { "Day": "2023-02-20", "Count": 27, "Revenue": 224 }, { "Day": "2023-02-21", "Count": 28, "Revenue": 284.5 }, { "Day": "2023-02-22", "Count": 21, "Revenue": 212 }, { "Day": "2023-02-23", "Count": 14, "Revenue": 143 }, { "Day": "2023-02-24", "Count": 26, "Revenue": 233.5 }, { "Day": "2023-02-25", "Count": 28, "Revenue": 293 }, { "Day": "2023-02-26", "Count": 23, "Revenue": 197 }, { "Day": "2023-02-27", "Count": 27, "Revenue": 228.5 }, { "Day": "2023-02-28", "Count": 21, "Revenue": 208 }, { "Day": "2023-03-01", "Count": 26, "Revenue": 177.5 }, { "Day": "2023-03-02", "Count": 27, "Revenue": 204 }, { "Day": "2023-03-03", "Count": 22, "Revenue": 176.5 }, { "Day": "2023-03-04", "Count": 20, "Revenue": 188.5 }, { "Day": "2023-03-05", "Count": 20, "Revenue": 191.5 }, { "Day": "2023-03-06", "Count": 23, "Revenue": 234.5 }, { "Day": "2023-03-07", "Count": 29, "Revenue": 261.5 }, { "Day": "2023-03-08", "Count": 22, "Revenue": 156.5 }, { "Day": "2023-03-09", "Count": 19, "Revenue": 173.5 }, { "Day": "2023-03-10", "Count": 24, "Revenue": 198.5 }, { "Day": "2023-03-11", "Count": 14, "Revenue": 159 }, { "Day": "2023-03-12", "Count": 19, "Revenue": 220 }, { "Day": "2023-03-13", "Count": 39, "Revenue": 307 }, { "Day": "2023-03-14", "Count": 21, "Revenue": 156.5 }, { "Day": "2023-03-15", "Count": 21, "Revenue": 152.5 }, { "Day": "2023-03-16", "Count": 32, "Revenue": 310 }, { "Day": "2023-03-17", "Count": 26, "Revenue": 233.5 }, { "Day": "2023-03-18", "Count": 26, "Revenue": 276.5 }, { "Day": "2023-03-19", "Count": 26, "Revenue": 290 }, { "Day": "2023-03-20", "Count": 26, "Revenue": 187 }, { "Day": "2023-03-21", "Count": 21, "Revenue": 167.5 }, { "Day": "2023-03-22", "Count": 21, "Revenue": 168.5 }, { "Day": "2023-03-23", "Count": 25, "Revenue": 237 }, { "Day": "2023-03-24", "Count": 26, "Revenue": 220.5 }, { "Day": "2023-03-25", "Count": 21, "Revenue": 216.5 }, { "Day": "2023-03-26", "Count": 34, "Revenue": 285 }, { "Day": "2023-03-27", "Count": 25, "Revenue": 174 }, { "Day": "2023-03-28", "Count": 27, "Revenue": 253 }, { "Day": "2023-03-29", "Count": 14, "Revenue": 128 }, { "Day": "2023-03-30", "Count": 23, "Revenue": 197 }, { "Day": "2023-03-31", "Count": 24, "Revenue": 225 }, { "Day": "2023-04-01", "Count": 25, "Revenue": 256 }, { "Day": "2023-04-02", "Count": 31, "Revenue": 257.5 }, { "Day": "2023-04-03", "Count": 15, "Revenue": 115.5 }, { "Day": "2023-04-04", "Count": 20, "Revenue": 194.5 }, { "Day": "2023-04-05", "Count": 15, "Revenue": 104.5 }, { "Day": "2023-04-06", "Count": 34, "Revenue": 304.5 }, { "Day": "2023-04-07", "Count": 19, "Revenue": 215.5 }, { "Day": "2023-04-08", "Count": 27, "Revenue": 231.5 }, { "Day": "2023-04-09", "Count": 27, "Revenue": 276 }, { "Day": "2023-04-10", "Count": 22, "Revenue": 148.5 }, { "Day": "2023-04-11", "Count": 25, "Revenue": 265.5 }, { "Day": "2023-04-12", "Count": 24, "Revenue": 207 }, { "Day": "2023-04-13", "Count": 22, "Revenue": 202.5 }, { "Day": "2023-04-14", "Count": 26, "Revenue": 232.5 }, { "Day": "2023-04-15", "Count": 27, "Revenue": 299.5 }, { "Day": "2023-04-16", "Count": 17, "Revenue": 158 }, { "Day": "2023-04-17", "Count": 28, "Revenue": 280 }, { "Day": "2023-04-18", "Count": 21, "Revenue": 193 }, { "Day": "2023-04-19", "Count": 20, "Revenue": 178 }, { "Day": "2023-04-20", "Count": 31, "Revenue": 309.5 }, { "Day": "2023-04-21", "Count": 28, "Revenue": 282.5 }, { "Day": "2023-04-22", "Count": 12, "Revenue": 93.5 }, { "Day": "2023-04-23", "Count": 25, "Revenue": 180 }, { "Day": "2023-04-24", "Count": 23, "Revenue": 260.5 }, { "Day": "2023-04-25", "Count": 24, "Revenue": 218.5 }, { "Day": "2023-04-26", "Count": 17, "Revenue": 199.5 }, { "Day": "2023-04-27", "Count": 14, "Revenue": 146 }, { "Day": "2023-04-28", "Count": 20, "Revenue": 160.5 }, { "Day": "2023-04-29", "Count": 22, "Revenue": 161 }, { "Day": "2023-04-30", "Count": 35, "Revenue": 333 }, { "Day": "2023-05-01", "Count": 22, "Revenue": 157.5 }, { "Day": "2023-05-02", "Count": 26, "Revenue": 238.5 }, { "Day": "2023-05-03", "Count": 25, "Revenue": 207.5 }, { "Day": "2023-05-04", "Count": 22, "Revenue": 211.5 }, { "Day": "2023-05-05", "Count": 30, "Revenue": 224.5 }, { "Day": "2023-05-06", "Count": 25, "Revenue": 227.5 }, { "Day": "2023-05-07", "Count": 15, "Revenue": 142.5 }, { "Day": "2023-05-08", "Count": 24, "Revenue": 261 }, { "Day": "2023-05-09", "Count": 22, "Revenue": 226 }, { "Day": "2023-05-10", "Count": 20, "Revenue": 153.5 }, { "Day": "2023-05-11", "Count": 29, "Revenue": 275.5 }, { "Day": "2023-05-12", "Count": 16, "Revenue": 131 }, { "Day": "2023-05-13", "Count": 18, "Revenue": 195.5 }, { "Day": "2023-05-14", "Count": 19, "Revenue": 165.5 }, { "Day": "2023-05-15", "Count": 22, "Revenue": 149 }, { "Day": "2023-05-16", "Count": 21, "Revenue": 220 }, { "Day": "2023-05-17", "Count": 26, "Revenue": 232 }, { "Day": "2023-05-18", "Count": 29, "Revenue": 258 }, { "Day": "2023-05-19", "Count": 22, "Revenue": 183 }, { "Day": "2023-05-20", "Count": 23, "Revenue": 226.5 }, { "Day": "2023-05-21", "Count": 30, "Revenue": 267 }, { "Day": "2023-05-22", "Count": 20, "Revenue": 196 }, { "Day": "2023-05-23", "Count": 22, "Revenue": 221 }, { "Day": "2023-05-24", "Count": 23, "Revenue": 185.5 }, { "Day": "2023-05-25", "Count": 16, "Revenue": 141 }, { "Day": "2023-05-26", "Count": 19, "Revenue": 185.5 }, { "Day": "2023-05-27", "Count": 22, "Revenue": 194 }, { "Day": "2023-05-28", "Count": 24, "Revenue": 221 }, { "Day": "2023-05-29", "Count": 22, "Revenue": 196 }, { "Day": "2023-05-30", "Count": 18, "Revenue": 148.5 }, { "Day": "2023-05-31", "Count": 23, "Revenue": 178.5 }, { "Day": "2023-06-01", "Count": 30, "Revenue": 274 }, { "Day": "2023-06-02", "Count": 26, "Revenue": 177.5 }, { "Day": "2023-06-03", "Count": 19, "Revenue": 181 }, { "Day": "2023-06-04", "Count": 19, "Revenue": 154.5 }, { "Day": "2023-06-05", "Count": 18, "Revenue": 163.5 }, { "Day": "2023-06-06", "Count": 32, "Revenue": 335.5 }, { "Day": "2023-06-07", "Count": 15, "Revenue": 103.5 }, { "Day": "2023-06-08", "Count": 24, "Revenue": 239 }, { "Day": "2023-06-09", "Count": 23, "Revenue": 220.5 }, { "Day": "2023-06-10", "Count": 28, "Revenue": 276.5 }, { "Day": "2023-06-11", "Count": 19, "Revenue": 133.5 }, { "Day": "2023-06-12", "Count": 27, "Revenue": 219.5 }, { "Day": "2023-06-13", "Count": 22, "Revenue": 235 }, { "Day": "2023-06-14", "Count": 21, "Revenue": 204 }, { "Day": "2023-06-15", "Count": 24, "Revenue": 212.5 }, { "Day": "2023-06-16", "Count": 31, "Revenue": 316.5 }, { "Day": "2023-06-17", "Count": 25, "Revenue": 204.5 }, { "Day": "2023-06-18", "Count": 33, "Revenue": 278 }, { "Day": "2023-06-19", "Count": 17, "Revenue": 169.5 }, { "Day": "2023-06-20", "Count": 21, "Revenue": 204 }, { "Day": "2023-06-21", "Count": 21, "Revenue": 214.5 }, { "Day": "2023-06-22", "Count": 17, "Revenue": 179.5 }, { "Day": "2023-06-23", "Count": 28, "Revenue": 274 }, { "Day": "2023-06-24", "Count": 28, "Revenue": 216.5 }, { "Day": "2023-06-25", "Count": 22, "Revenue": 175.5 }, { "Day": "2023-06-26", "Count": 25, "Revenue": 211 }, { "Day": "2023-06-27", "Count": 22, "Revenue": 163.5 }, { "Day": "2023-06-28", "Count": 31, "Revenue": 263.5 }, { "Day": "2023-06-29", "Count": 29, "Revenue": 282.5 }, { "Day": "2023-06-30", "Count": 36, "Revenue": 333 }, { "Day": "2023-07-01", "Count": 17, "Revenue": 135.5 }, { "Day": "2023-07-02", "Count": 29, "Revenue": 258.5 }, { "Day": "2023-07-03", "Count": 18, "Revenue": 171.5 }, { "Day": "2023-07-04", "Count": 18, "Revenue": 153.5 }, { "Day": "2023-07-05", "Count": 25, "Revenue": 209.5 }, { "Day": "2023-07-06", "Count": 20, "Revenue": 211.5 }, { "Day": "2023-07-07", "Count": 21, "Revenue": 225.5 }, { "Day": "2023-07-08", "Count": 27, "Revenue": 177 }, { "Day": "2023-07-09", "Count": 24, "Revenue": 184 }, { "Day": "2023-07-10", "Count": 25, "Revenue": 218.5 }, { "Day": "2023-07-11", "Count": 17, "Revenue": 111.5 }, { "Day": "2023-07-12", "Count": 26, "Revenue": 189 }, { "Day": "2023-07-13", "Count": 17, "Revenue": 150 }, { "Day": "2023-07-14", "Count": 22, "Revenue": 192 }, { "Day": "2023-07-15", "Count": 25, "Revenue": 208.5 }, { "Day": "2023-07-16", "Count": 26, "Revenue": 276 }, { "Day": "2023-07-17", "Count": 25, "Revenue": 231.5 }, { "Day": "2023-07-18", "Count": 26, "Revenue": 196 }, { "Day": "2023-07-19", "Count": 23, "Revenue": 174 }, { "Day": "2023-07-20", "Count": 29, "Revenue": 288.5 }, { "Day": "2023-07-21", "Count": 36, "Revenue": 300.5 }, { "Day": "2023-07-22", "Count": 13, "Revenue": 98.5 }, { "Day": "2023-07-23", "Count": 23, "Revenue": 222.5 }, { "Day": "2023-07-24", "Count": 37, "Revenue": 331.5 }, { "Day": "2023-07-25", "Count": 17, "Revenue": 122 }, { "Day": "2023-07-26", "Count": 29, "Revenue": 254.5 }, { "Day": "2023-07-27", "Count": 15, "Revenue": 110 }, { "Day": "2023-07-28", "Count": 27, "Revenue": 290 }, { "Day": "2023-07-29", "Count": 21, "Revenue": 173.5 }, { "Day": "2023-07-30", "Count": 15, "Revenue": 102.5 }, { "Day": "2023-07-31", "Count": 24, "Revenue": 208 }, { "Day": "2023-08-01", "Count": 16, "Revenue": 161 }, { "Day": "2023-08-02", "Count": 20, "Revenue": 164.5 }, { "Day": "2023-08-03", "Count": 21, "Revenue": 197 }, { "Day": "2023-08-04", "Count": 20, "Revenue": 191.5 }, { "Day": "2023-08-05", "Count": 23, "Revenue": 211.5 }, { "Day": "2023-08-06", "Count": 28, "Revenue": 278.5 }, { "Day": "2023-08-07", "Count": 34, "Revenue": 299.5 }, { "Day": "2023-08-08", "Count": 14, "Revenue": 98.5 }, { "Day": "2023-08-09", "Count": 24, "Revenue": 213.5 }, { "Day": "2023-08-10", "Count": 23, "Revenue": 211.5 }, { "Day": "2023-08-11", "Count": 33, "Revenue": 273.5 }, { "Day": "2023-08-12", "Count": 23, "Revenue": 232 }, { "Day": "2023-08-13", "Count": 20, "Revenue": 139.5 }, { "Day": "2023-08-14", "Count": 28, "Revenue": 247.5 }, { "Day": "2023-08-15", "Count": 22, "Revenue": 229.5 }, { "Day": "2023-08-16", "Count": 28, "Revenue": 291.5 }, { "Day": "2023-08-17", "Count": 33, "Revenue": 247.5 }, { "Day": "2023-08-18", "Count": 26, "Revenue": 200.5 }, { "Day": "2023-08-19", "Count": 21, "Revenue": 151 }, { "Day": "2023-08-20", "Count": 20, "Revenue": 190 }, { "Day": "2023-08-21", "Count": 24, "Revenue": 172 }, { "Day": "2023-08-22", "Count": 22, "Revenue": 136 }, { "Day": "2023-08-23", "Count": 24, "Revenue": 222 }, { "Day": "2023-08-24", "Count": 21, "Revenue": 186.5 }, { "Day": "2023-08-25", "Count": 16, "Revenue": 141.5 }, { "Day": "2023-08-26", "Count": 29, "Revenue": 287 }, { "Day": "2023-08-27", "Count": 19, "Revenue": 161 }, { "Day": "2023-08-28", "Count": 17, "Revenue": 156 }, { "Day": "2023-08-29", "Count": 25, "Revenue": 257 }, { "Day": "2023-08-30", "Count": 21, "Revenue": 209 }, { "Day": "2023-08-31", "Count": 20, "Revenue": 190.5 }, { "Day": "2023-09-01", "Count": 23, "Revenue": 171.5 }, { "Day": "2023-09-02", "Count": 25, "Revenue": 195 }, { "Day": "2023-09-03", "Count": 17, "Revenue": 159.5 }, { "Day": "2023-09-04", "Count": 19, "Revenue": 177 }, { "Day": "2023-09-05", "Count": 24, "Revenue": 244 }, { "Day": "2023-09-06", "Count": 32, "Revenue": 325.5 }, { "Day": "2023-09-07", "Count": 26, "Revenue": 226.5 }, { "Day": "2023-09-08", "Count": 23, "Revenue": 190.5 }, { "Day": "2023-09-09", "Count": 22, "Revenue": 186 }, { "Day": "2023-09-10", "Count": 33, "Revenue": 275 }, { "Day": "2023-09-11", "Count": 23, "Revenue": 192 }, { "Day": "2023-09-12", "Count": 28, "Revenue": 261.5 }, { "Day": "2023-09-13", "Count": 26, "Revenue": 245 }, { "Day": "2023-09-14", "Count": 19, "Revenue": 176 }, { "Day": "2023-09-15", "Count": 26, "Revenue": 231 }, { "Day": "2023-09-16", "Count": 24, "Revenue": 185.5 }, { "Day": "2023-09-17", "Count": 17, "Revenue": 80 }, { "Day": "2023-09-18", "Count": 21, "Revenue": 212.5 }, { "Day": "2023-09-19", "Count": 25, "Revenue": 200.5 }, { "Day": "2023-09-20", "Count": 22, "Revenue": 246.5 }, { "Day": "2023-09-21", "Count": 35, "Revenue": 288.5 }, { "Day": "2023-09-22", "Count": 19, "Revenue": 197.5 }, { "Day": "2023-09-23", "Count": 25, "Revenue": 189 }, { "Day": "2023-09-24", "Count": 13, "Revenue": 99.5 }, { "Day": "2023-09-25", "Count": 16, "Revenue": 153 }, { "Day": "2023-09-26", "Count": 27, "Revenue": 238.5 }, { "Day": "2023-09-27", "Count": 24, "Revenue": 212.5 }, { "Day": "2023-09-28", "Count": 24, "Revenue": 234.5 }, { "Day": "2023-09-29", "Count": 20, "Revenue": 192.5 }, { "Day": "2023-09-30", "Count": 28, "Revenue": 221.5 }, { "Day": "2023-10-01", "Count": 21, "Revenue": 219.5 }, { "Day": "2023-10-02", "Count": 23, "Revenue": 176.5 }, { "Day": "2023-10-03", "Count": 24, "Revenue": 226.5 }, { "Day": "2023-10-04", "Count": 26, "Revenue": 265.5 }, { "Day": "2023-10-05", "Count": 17, "Revenue": 94 }, { "Day": "2023-10-06", "Count": 27, "Revenue": 253.5 }, { "Day": "2023-10-07", "Count": 28, "Revenue": 285 }, { "Day": "2023-10-08", "Count": 32, "Revenue": 276 }, { "Day": "2023-10-09", "Count": 17, "Revenue": 143.5 }, { "Day": "2023-10-10", "Count": 24, "Revenue": 273.5 }, { "Day": "2023-10-11", "Count": 20, "Revenue": 194 }, { "Day": "2023-10-12", "Count": 19, "Revenue": 125 }, { "Day": "2023-10-13", "Count": 29, "Revenue": 203 }, { "Day": "2023-10-14", "Count": 19, "Revenue": 120.5 }, { "Day": "2023-10-15", "Count": 24, "Revenue": 243 }, { "Day": "2023-10-16", "Count": 28, "Revenue": 173 }, { "Day": "2023-10-17", "Count": 25, "Revenue": 253 }, { "Day": "2023-10-18", "Count": 17, "Revenue": 168.5 }, { "Day": "2023-10-19", "Count": 33, "Revenue": 341.5 }, { "Day": "2023-10-20", "Count": 29, "Revenue": 296.5 }, { "Day": "2023-10-21", "Count": 28, "Revenue": 219 }, { "Day": "2023-10-22", "Count": 35, "Revenue": 289 }, { "Day": "2023-10-23", "Count": 26, "Revenue": 230 }, { "Day": "2023-10-24", "Count": 27, "Revenue": 206.5 }, { "Day": "2023-10-25", "Count": 22, "Revenue": 163.5 }, { "Day": "2023-10-26", "Count": 31, "Revenue": 262 }, { "Day": "2023-10-27", "Count": 22, "Revenue": 194 }, { "Day": "2023-10-28", "Count": 24, "Revenue": 215.5 }, { "Day": "2023-10-29", "Count": 20, "Revenue": 159 }, { "Day": "2023-10-30", "Count": 26, "Revenue": 243 }, { "Day": "2023-10-31", "Count": 24, "Revenue": 242 }, { "Day": "2023-11-01", "Count": 22, "Revenue": 176 }, { "Day": "2023-11-02", "Count": 23, "Revenue": 157 }, { "Day": "2023-11-03", "Count": 24, "Revenue": 172.5 }, { "Day": "2023-11-04", "Count": 24, "Revenue": 219.5 }, { "Day": "2023-11-05", "Count": 17, "Revenue": 114 }, { "Day": "2023-11-06", "Count": 32, "Revenue": 282.5 }, { "Day": "2023-11-07", "Count": 34, "Revenue": 350 }, { "Day": "2023-11-08", "Count": 26, "Revenue": 192.5 }, { "Day": "2023-11-09", "Count": 25, "Revenue": 237.5 }, { "Day": "2023-11-10", "Count": 26, "Revenue": 252 }, { "Day": "2023-11-11", "Count": 17, "Revenue": 173.5 }, { "Day": "2023-11-12", "Count": 24, "Revenue": 191 }, { "Day": "2023-11-13", "Count": 22, "Revenue": 194.5 }, { "Day": "2023-11-14", "Count": 27, "Revenue": 232.5 }, { "Day": "2023-11-15", "Count": 24, "Revenue": 195.5 }, { "Day": "2023-11-16", "Count": 21, "Revenue": 221.5 }, { "Day": "2023-11-17", "Count": 18, "Revenue": 163.5 }, { "Day": "2023-11-18", "Count": 27, "Revenue": 245.5 }, { "Day": "2023-11-19", "Count": 30, "Revenue": 276 }, { "Day": "2023-11-20", "Count": 23, "Revenue": 277 }, { "Day": "2023-11-21", "Count": 16, "Revenue": 110.5 }, { "Day": "2023-11-22", "Count": 23, "Revenue": 222.5 }, { "Day": "2023-11-23", "Count": 31, "Revenue": 273 }, { "Day": "2023-11-24", "Count": 14, "Revenue": 118 }, { "Day": "2023-11-25", "Count": 26, "Revenue": 205 }, { "Day": "2023-11-26", "Count": 31, "Revenue": 299.5 }, { "Day": "2023-11-27", "Count": 21, "Revenue": 202.5 }, { "Day": "2023-11-28", "Count": 22, "Revenue": 253.5 }, { "Day": "2023-11-29", "Count": 24, "Revenue": 207.5 }, { "Day": "2023-11-30", "Count": 26, "Revenue": 222 }, { "Day": "2023-12-01", "Count": 26, "Revenue": 255 }, { "Day": "2023-12-02", "Count": 23, "Revenue": 283 }, { "Day": "2023-12-03", "Count": 29, "Revenue": 282 }, { "Day": "2023-12-04", "Count": 26, "Revenue": 220.5 }, { "Day": "2023-12-05", "Count": 23, "Revenue": 246.5 }, { "Day": "2023-12-06", "Count": 28, "Revenue": 215 }, { "Day": "2023-12-07", "Count": 21, "Revenue": 177.5 }, { "Day": "2023-12-08", "Count": 24, "Revenue": 277 }, { "Day": "2023-12-09", "Count": 30, "Revenue": 231.5 }, { "Day": "2023-12-10", "Count": 19, "Revenue": 187.5 }, { "Day": "2023-12-11", "Count": 18, "Revenue": 161.5 }, { "Day": "2023-12-12", "Count": 17, "Revenue": 138 }, { "Day": "2023-12-13", "Count": 16, "Revenue": 129 }, { "Day": "2023-12-14", "Count": 21, "Revenue": 203 }, { "Day": "2023-12-15", "Count": 22, "Revenue": 193.5 }, { "Day": "2023-12-16", "Count": 26, "Revenue": 214.5 }, { "Day": "2023-12-17", "Count": 25, "Revenue": 226.5 }, { "Day": "2023-12-18", "Count": 23, "Revenue": 200.5 }, { "Day": "2023-12-19", "Count": 24, "Revenue": 209 }, { "Day": "2023-12-20", "Count": 19, "Revenue": 160.5 }, { "Day": "2023-12-21", "Count": 24, "Revenue": 192 }, { "Day": "2023-12-22", "Count": 29, "Revenue": 283 }, { "Day": "2023-12-23", "Count": 19, "Revenue": 205.5 }, { "Day": "2023-12-24", "Count": 31, "Revenue": 277.5 }, { "Day": "2023-12-25", "Count": 22, "Revenue": 204.5 }, { "Day": "2023-12-26", "Count": 23, "Revenue": 233.5 }, { "Day": "2023-12-27", "Count": 22, "Revenue": 197 }, { "Day": "2023-12-28", "Count": 20, "Revenue": 167 }, { "Day": "2023-12-29", "Count": 22, "Revenue": 148.5 }, { "Day": "2023-12-30", "Count": 20, "Revenue": 161 }, { "Day": "2023-12-31", "Count": 18, "Revenue": 155 }];
+
+    // ── THEME ─────────────────────────────────────────────────────
+    const C = {
+      gold: '#c9a84c', goldL: '#e8c97a',
+      green: '#6bbf8e', rose: '#e07b6a',
+      blue: '#6b9bbf', lav: '#9b8bbf',
+      orange: '#d4834a', teal: '#5bbfb5',
+      cream: '#f0e6d3', muted: '#7a7068',
+      bg: '#0f0e0d', card: '#221f1c', border: '#2e2a26'
+    };
+    const PALETTE = [C.gold, C.green, C.rose, C.blue, C.lav, C.orange, C.teal, C.goldL];
+
+    Chart.defaults.color = C.muted;
+    Chart.defaults.borderColor = C.border;
+    Chart.defaults.font.family = "'DM Sans', sans-serif";
+
+    const baseOpts = {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }, tooltip: {
+          backgroundColor: '#1a1815',
+          borderColor: C.border, borderWidth: 1,
+          titleColor: C.cream, bodyColor: C.muted,
+          padding: 10,
+          callbacks: { label: ctx => ' $' + ctx.parsed.y?.toFixed(2) ?? ctx.parsed }
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: C.muted, font: { size: 11 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: C.muted, font: { size: 11 }, callback: v => '$' + v.toLocaleString() } }
+      }
+    };
+
+    // ── TREN CHARTS ───────────────────────────────────────────────
+    // Monthly revenue
+    new Chart(document.getElementById('chartMonthly'), {
+      type: 'bar',
+      data: {
+        labels: monthly.map(d => d.Month),
+        datasets: [{
+          label: 'Revenue',
+          data: monthly.map(d => d.Revenue),
+          backgroundColor: monthly.map(d => d.Revenue === 6755 ? C.gold : 'rgba(201,168,76,0.25)'),
+          borderColor: monthly.map(d => d.Revenue === 6755 ? C.goldL : C.gold),
+          borderWidth: 1, borderRadius: 4,
+        }, {
+          label: 'Transactions',
+          data: monthly.map(d => d.Txn),
+          type: 'line',
+          borderColor: C.rose,
+          backgroundColor: 'transparent',
+          borderWidth: 2, pointRadius: 4,
+          pointBackgroundColor: C.rose,
+          yAxisID: 'y2',
+        }]
+      },
+      options: {
+        ...baseOpts,
+        scales: {
+          ...baseOpts.scales,
+          y2: {
+            position: 'right',
+            grid: { display: false },
+            ticks: { color: C.rose, font: { size: 10 }, callback: v => v + ' txn' }
+          }
+        },
+        plugins: {
+          ...baseOpts.plugins,
+          legend: { display: true, position: 'top', labels: { color: C.muted, boxWidth: 12, font: { size: 11 } } },
+          tooltip: { ...baseOpts.plugins.tooltip, callbacks: { label: ctx => ctx.datasetIndex === 0 ? ' $' + ctx.parsed.y.toFixed(0) : ' ' + ctx.parsed.y + ' txn' } }
+        }
+      }
+    });
+
+    // Mini bar
+    new Chart(document.getElementById('chartMiniBar'), {
+      type: 'bar',
+      data: {
+        labels: monthly.map(d => d.Month),
+        datasets: [{ data: monthly.map(d => d.Revenue), backgroundColor: PALETTE[0] + '55', borderColor: PALETTE[0], borderWidth: 1, borderRadius: 2 }]
+      },
+      options: { ...baseOpts, plugins: { ...baseOpts.plugins, tooltip: { enabled: false } } }
+    });
+
+    // Daily rolling
+    function rolling7(arr, key) {
+      return arr.map((d, i) => {
+        const slice = arr.slice(Math.max(0, i - 6), i + 1);
+        return slice.reduce((s, x) => s + x[key], 0) / slice.length;
+      });
+    }
+    const roll = rolling7(daily, 'Count');
+    new Chart(document.getElementById('chartDaily'), {
+      type: 'line',
+      data: {
+        labels: daily.map(d => d.Day.slice(5)),
+        datasets: [{
+          label: 'Daily Transactions',
+          data: daily.map(d => d.Count),
+          borderColor: 'rgba(107,159,191,0.35)',
+          backgroundColor: 'transparent',
+          borderWidth: 1, pointRadius: 0,
+        }, {
+          label: '7-day rolling',
+          data: roll,
+          borderColor: C.blue,
+          backgroundColor: 'transparent',
+          borderWidth: 2, pointRadius: 0,
+        }]
+      },
+      options: {
+        ...baseOpts,
+        scales: {
+          x: { ...baseOpts.scales.x, ticks: { maxTicksLimit: 12, color: C.muted, font: { size: 9 } } },
+          y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks, callback: v => v + ' txn' } }
+        },
+        plugins: {
+          ...baseOpts.plugins,
+          legend: { display: true, position: 'top', labels: { color: C.muted, boxWidth: 12, font: { size: 10 } } },
+          tooltip: { ...baseOpts.plugins.tooltip, callbacks: { label: ctx => ' ' + ctx.parsed.y.toFixed(1) + ' transactions' } }
+        }
+      }
+    });
+
+    // ── ITEM BARS (custom) ────────────────────────────────────────
+    const maxRev = items[0].Revenue;
+    const itemColors = [C.gold, C.green, C.blue, C.rose, C.lav, C.orange, C.teal, C.goldL];
+    const barsEl = document.getElementById('itemBars');
+    items.forEach((it, i) => {
+      const pct = (it.Revenue / maxRev * 100).toFixed(1);
+      barsEl.innerHTML += `
+    <div class="item-row">
+      <div class="item-name">${it.Item}</div>
+      <div class="item-bar-wrap">
+        <div class="item-bar" style="width:${pct}%;background:${itemColors[i]}"></div>
+      </div>
+      <div class="item-val">$${it.Revenue.toLocaleString()}</div>
+    </div>`;
+    });
+
+    // Donut - item qty
+    const totalQty = items.reduce((s, d) => s + d.Qty, 0);
+    new Chart(document.getElementById('chartDonut'), {
+      type: 'doughnut',
+      data: {
+        labels: items.map(d => d.Item),
+        datasets: [{ data: items.map(d => d.Qty), backgroundColor: itemColors, borderWidth: 2, borderColor: C.card }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '62%',
+        plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a1815', borderColor: C.border, borderWidth: 1, titleColor: C.cream, bodyColor: C.muted, callbacks: { label: ctx => ' ' + ((ctx.parsed / totalQty) * 100).toFixed(1) + '%' } } }
+      }
+    });
+
+    const donutLeg = document.getElementById('donutLegend');
+    items.forEach((it, i) => {
+      donutLeg.innerHTML += `<div class="legend-row"><div class="legend-dot" style="background:${itemColors[i]}"></div><div class="legend-label">${it.Item}</div><div class="legend-pct">${((it.Qty / totalQty) * 100).toFixed(1)}%</div></div>`;
+    });
+
+    // Item compare (grouped bar)
+    new Chart(document.getElementById('chartItemCompare'), {
+      type: 'bar',
+      data: {
+        labels: items.map(d => d.Item),
+        datasets: [
+          { label: 'Revenue ($)', data: items.map(d => d.Revenue), backgroundColor: C.gold + '99', borderColor: C.gold, borderWidth: 1, borderRadius: 3, yAxisID: 'y' },
+          { label: 'Quantity Sold', data: items.map(d => d.Qty), backgroundColor: C.green + '66', borderColor: C.green, borderWidth: 1, borderRadius: 3, yAxisID: 'y2' }
+        ]
+      },
+      options: {
+        ...baseOpts,
+        scales: {
+          x: baseOpts.scales.x,
+          y: { ...baseOpts.scales.y },
+          y2: { position: 'right', grid: { display: false }, ticks: { color: C.green, font: { size: 10 }, callback: v => v + ' qty' } }
+        },
+        plugins: {
+          ...baseOpts.plugins,
+          legend: { display: true, position: 'top', labels: { color: C.muted, boxWidth: 12, font: { size: 11 } } },
+          tooltip: { ...baseOpts.plugins.tooltip, callbacks: { label: ctx => ctx.datasetIndex === 0 ? ' $' + ctx.parsed.y.toFixed(0) : ' ' + ctx.parsed.y + ' qty' } }
+        }
+      }
+    });
+
+    // ── PAYMENT CHARTS ────────────────────────────────────────────
+    const pmColors = [C.gold, C.blue, C.rose];
+    new Chart(document.getElementById('chartPmBar'), {
+      type: 'bar',
+      data: {
+        labels: pm.map(d => d['Payment Method']),
+        datasets: [{ data: pm.map(d => d.Count), backgroundColor: pmColors.map(c => c + '88'), borderColor: pmColors, borderWidth: 1, borderRadius: 6 }]
+      },
+      options: { ...baseOpts, scales: { x: baseOpts.scales.x, y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks, callback: v => v.toLocaleString() + ' txn' } } }, plugins: { ...baseOpts.plugins, tooltip: { ...baseOpts.plugins.tooltip, callbacks: { label: ctx => ' ' + ctx.parsed.y.toLocaleString() + ' transactions' } } } }
+    });
+
+    const totalPmRev = pm.reduce((s, d) => s + d.Revenue, 0);
+    new Chart(document.getElementById('chartPmDonut'), {
+      type: 'doughnut',
+      data: {
+        labels: pm.map(d => d['Payment Method']),
+        datasets: [{ data: pm.map(d => d.Revenue), backgroundColor: pmColors, borderWidth: 2, borderColor: C.card }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '60%',
+        plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a1815', borderColor: C.border, borderWidth: 1, titleColor: C.cream, bodyColor: C.muted, callbacks: { label: ctx => ' $' + ctx.parsed.toLocaleString() + ' (' + ((ctx.parsed / totalPmRev) * 100).toFixed(1) + '%)' } } }
+      }
+    });
+
+    const pmLeg = document.getElementById('pmLegend');
+    pm.forEach((p, i) => {
+      pmLeg.innerHTML += `<div class="legend-row"><div class="legend-dot" style="background:${pmColors[i]}"></div><div class="legend-label">${p['Payment Method']}</div><div class="legend-pct">${((p.Revenue / totalPmRev) * 100).toFixed(1)}%</div></div>`;
+    });
+
+    // ── LOKASI CHARTS ─────────────────────────────────────────────
+    const months = Object.keys(locMonthly);
+    new Chart(document.getElementById('chartLocMonthly'), {
+      type: 'bar',
+      data: {
+        labels: months,
+        datasets: [
+          { label: 'In-store', data: months.map(m => locMonthly[m].Instore), backgroundColor: C.blue + '88', borderColor: C.blue, borderWidth: 1, borderRadius: 3, stack: 'loc' },
+          { label: 'Takeaway', data: months.map(m => locMonthly[m].Takeaway), backgroundColor: C.gold + '88', borderColor: C.gold, borderWidth: 1, borderRadius: 3, stack: 'loc' }
+        ]
+      },
+      options: {
+        ...baseOpts,
+        plugins: { ...baseOpts.plugins, legend: { display: true, position: 'top', labels: { color: C.muted, boxWidth: 12, font: { size: 11 } } } }
+      }
+    });
+
+    const itemNames = Object.keys(itemLoc);
+    new Chart(document.getElementById('chartLocItem'), {
+      type: 'bar',
+      data: {
+        labels: itemNames,
+        datasets: [
+          { label: 'In-store', data: itemNames.map(k => itemLoc[k].Instore), backgroundColor: C.blue + '88', borderColor: C.blue, borderWidth: 1, borderRadius: 3 },
+          { label: 'Takeaway', data: itemNames.map(k => itemLoc[k].Takeaway), backgroundColor: C.gold + '88', borderColor: C.gold, borderWidth: 1, borderRadius: 3 }
+        ]
+      },
+      options: {
+        ...baseOpts,
+        indexAxis: 'y',
+        scales: {
+          x: { ...baseOpts.scales.x, ticks: { ...baseOpts.scales.x.ticks, callback: v => v + ' qty' } },
+          y: { grid: { display: false }, ticks: { color: C.muted, font: { size: 11 } } }
+        },
+        plugins: { ...baseOpts.plugins, legend: { display: true, position: 'top', labels: { color: C.muted, boxWidth: 12, font: { size: 11 } } }, tooltip: { ...baseOpts.plugins.tooltip, callbacks: { label: ctx => ' ' + ctx.parsed.x + ' qty' } } }
+      }
+    });
+
+    const instoreTotal = Object.values(locMonthly).reduce((s, d) => s + d.Instore, 0);
+    const takeTotal = Object.values(locMonthly).reduce((s, d) => s + d.Takeaway, 0);
+    new Chart(document.getElementById('chartLocDonut'), {
+      type: 'doughnut',
+      data: {
+        labels: ['In-store', 'Takeaway'],
+        datasets: [{ data: [instoreTotal, takeTotal], backgroundColor: [C.blue, C.gold], borderWidth: 2, borderColor: C.card }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '65%',
+        plugins: { legend: { display: true, position: 'bottom', labels: { color: C.muted, boxWidth: 10, font: { size: 11 } } }, tooltip: { backgroundColor: '#1a1815', borderColor: C.border, borderWidth: 1, titleColor: C.cream, bodyColor: C.muted, callbacks: { label: ctx => ' $' + ctx.parsed.toLocaleString() } } }
+      }
+    });
+
+    // ── TAB SWITCH ────────────────────────────────────────────────
+    function switchTab(name) {
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+      const targetPanel = document.getElementById('panel-' + name);
+      if (targetPanel) targetPanel.classList.add('active');
+
+      // Find the button that triggered this
+      const buttons = document.querySelectorAll('.tab-btn');
+      buttons.forEach(btn => {
+        if (btn.getAttribute('onclick').includes(`'${name}'`)) {
+          btn.classList.add('active');
+        }
+      });
+
+      // Init data explorer if data tab
+      if (name === 'data') {
+        // Ensure filters are populated
+        dfPopFilters(dfGetData());
+        dfRender();
+      }
+    }
+
+    // ── DATA EXPLORER JS ─────────────────────────────────────────
+    const DIRTY_DATA = [{ "Transaction ID": "TXN_1961373", "Item": "Coffee", "Quantity": "2", "Price Per Unit": "2.0", "Total Spent": "4.0", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "2023-09-08" }, { "Transaction ID": "TXN_4977031", "Item": "Cake", "Quantity": "4", "Price Per Unit": "3.0", "Total Spent": "12.0", "Payment Method": "Cash", "Location": "In-store", "Transaction Date": "2023-05-16" }, { "Transaction ID": "TXN_4271903", "Item": "Cookie", "Quantity": "4", "Price Per Unit": "1.0", "Total Spent": "ERROR", "Payment Method": "Credit Card", "Location": "In-store", "Transaction Date": "2023-07-19" }, { "Transaction ID": "TXN_7034554", "Item": "Salad", "Quantity": "2", "Price Per Unit": "5.0", "Total Spent": "10.0", "Payment Method": "UNKNOWN", "Location": "UNKNOWN", "Transaction Date": "2023-04-27" }, { "Transaction ID": "TXN_3160411", "Item": "Coffee", "Quantity": "2", "Price Per Unit": "2.0", "Total Spent": "4.0", "Payment Method": "Digital Wallet", "Location": "In-store", "Transaction Date": "2023-06-11" }, { "Transaction ID": "TXN_2602893", "Item": "Smoothie", "Quantity": "5", "Price Per Unit": "4.0", "Total Spent": "20.0", "Payment Method": "Credit Card", "Location": "nan", "Transaction Date": "2023-03-31" }, { "Transaction ID": "TXN_4433211", "Item": "UNKNOWN", "Quantity": "3", "Price Per Unit": "3.0", "Total Spent": "9.0", "Payment Method": "ERROR", "Location": "Takeaway", "Transaction Date": "2023-10-06" }, { "Transaction ID": "TXN_6699534", "Item": "Sandwich", "Quantity": "4", "Price Per Unit": "4.0", "Total Spent": "16.0", "Payment Method": "Cash", "Location": "UNKNOWN", "Transaction Date": "2023-10-28" }, { "Transaction ID": "TXN_4717867", "Item": "nan", "Quantity": "5", "Price Per Unit": "3.0", "Total Spent": "15.0", "Payment Method": "nan", "Location": "Takeaway", "Transaction Date": "2023-07-28" }, { "Transaction ID": "TXN_2064365", "Item": "Sandwich", "Quantity": "5", "Price Per Unit": "4.0", "Total Spent": "20.0", "Payment Method": "nan", "Location": "In-store", "Transaction Date": "2023-12-31" }, { "Transaction ID": "TXN_2548360", "Item": "Salad", "Quantity": "5", "Price Per Unit": "5.0", "Total Spent": "25.0", "Payment Method": "Cash", "Location": "Takeaway", "Transaction Date": "2023-11-07" }, { "Transaction ID": "TXN_3051279", "Item": "Sandwich", "Quantity": "2", "Price Per Unit": "4.0", "Total Spent": "8.0", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "ERROR" }, { "Transaction ID": "TXN_7619095", "Item": "Sandwich", "Quantity": "2", "Price Per Unit": "4.0", "Total Spent": "8.0", "Payment Method": "Cash", "Location": "In-store", "Transaction Date": "2023-05-03" }, { "Transaction ID": "TXN_9437049", "Item": "Cookie", "Quantity": "5", "Price Per Unit": "1.0", "Total Spent": "5.0", "Payment Method": "nan", "Location": "Takeaway", "Transaction Date": "2023-06-01" }, { "Transaction ID": "TXN_8915701", "Item": "ERROR", "Quantity": "2", "Price Per Unit": "1.5", "Total Spent": "3.0", "Payment Method": "nan", "Location": "In-store", "Transaction Date": "2023-03-21" }, { "Transaction ID": "TXN_2847255", "Item": "Salad", "Quantity": "3", "Price Per Unit": "5.0", "Total Spent": "15.0", "Payment Method": "Credit Card", "Location": "In-store", "Transaction Date": "2023-11-15" }, { "Transaction ID": "TXN_3765707", "Item": "Sandwich", "Quantity": "1", "Price Per Unit": "4.0", "Total Spent": "4.0", "Payment Method": "nan", "Location": "nan", "Transaction Date": "2023-06-10" }, { "Transaction ID": "TXN_6769710", "Item": "Juice", "Quantity": "2", "Price Per Unit": "3.0", "Total Spent": "6.0", "Payment Method": "Cash", "Location": "In-store", "Transaction Date": "2023-02-24" }, { "Transaction ID": "TXN_8876618", "Item": "Cake", "Quantity": "5", "Price Per Unit": "3.0", "Total Spent": "15.0", "Payment Method": "Cash", "Location": "ERROR", "Transaction Date": "2023-03-25" }, { "Transaction ID": "TXN_3709394", "Item": "Juice", "Quantity": "4", "Price Per Unit": "3.0", "Total Spent": "12.0", "Payment Method": "Cash", "Location": "Takeaway", "Transaction Date": "2023-01-15" }, { "Transaction ID": "TXN_3522028", "Item": "Smoothie", "Quantity": "ERROR", "Price Per Unit": "4.0", "Total Spent": "20.0", "Payment Method": "Cash", "Location": "In-store", "Transaction Date": "2023-04-04" }, { "Transaction ID": "TXN_3567645", "Item": "Smoothie", "Quantity": "4", "Price Per Unit": "4.0", "Total Spent": "16.0", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "2023-03-30" }, { "Transaction ID": "TXN_5132361", "Item": "Sandwich", "Quantity": "3", "Price Per Unit": "4.0", "Total Spent": "12.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-12-01" }, { "Transaction ID": "TXN_2616390", "Item": "Sandwich", "Quantity": "2", "Price Per Unit": "4.0", "Total Spent": "8.0", "Payment Method": "nan", "Location": "nan", "Transaction Date": "2023-09-18" }, { "Transaction ID": "TXN_9400181", "Item": "Sandwich", "Quantity": "5", "Price Per Unit": "4.0", "Total Spent": "20.0", "Payment Method": "Cash", "Location": "In-store", "Transaction Date": "2023-06-03" }, { "Transaction ID": "TXN_7958992", "Item": "Smoothie", "Quantity": "3", "Price Per Unit": "4.0", "Total Spent": "nan", "Payment Method": "UNKNOWN", "Location": "UNKNOWN", "Transaction Date": "2023-12-13" }, { "Transaction ID": "TXN_5183041", "Item": "Cookie", "Quantity": "5", "Price Per Unit": "1.0", "Total Spent": "5.0", "Payment Method": "Credit Card", "Location": "In-store", "Transaction Date": "2023-04-20" }, { "Transaction ID": "TXN_5695074", "Item": "Juice", "Quantity": "4", "Price Per Unit": "3.0", "Total Spent": "12.0", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "2023-04-10" }, { "Transaction ID": "TXN_8467949", "Item": "Smoothie", "Quantity": "5", "Price Per Unit": "4.0", "Total Spent": "20.0", "Payment Method": "Credit Card", "Location": "nan", "Transaction Date": "2023-03-11" }, { "Transaction ID": "TXN_7640952", "Item": "Cake", "Quantity": "4", "Price Per Unit": "3.0", "Total Spent": "12.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "ERROR" }, { "Transaction ID": "TXN_1736287", "Item": "nan", "Quantity": "5", "Price Per Unit": "2.0", "Total Spent": "10.0", "Payment Method": "Digital Wallet", "Location": "nan", "Transaction Date": "2023-06-02" }, { "Transaction ID": "TXN_8927252", "Item": "UNKNOWN", "Quantity": "2", "Price Per Unit": "1.0", "Total Spent": "ERROR", "Payment Method": "Credit Card", "Location": "ERROR", "Transaction Date": "2023-11-06" }, { "Transaction ID": "TXN_9677376", "Item": "Smoothie", "Quantity": "4", "Price Per Unit": "4.0", "Total Spent": "16.0", "Payment Method": "nan", "Location": "In-store", "Transaction Date": "2023-08-15" }, { "Transaction ID": "TXN_7710508", "Item": "UNKNOWN", "Quantity": "5", "Price Per Unit": "1.0", "Total Spent": "5.0", "Payment Method": "Cash", "Location": "nan", "Transaction Date": "ERROR" }, { "Transaction ID": "TXN_8853997", "Item": "Smoothie", "Quantity": "2", "Price Per Unit": "4.0", "Total Spent": "8.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-10-09" }, { "Transaction ID": "TXN_9130559", "Item": "Sandwich", "Quantity": "1", "Price Per Unit": "4.0", "Total Spent": "4.0", "Payment Method": "Credit Card", "Location": "UNKNOWN", "Transaction Date": "2023-05-28" }, { "Transaction ID": "TXN_6855453", "Item": "UNKNOWN", "Quantity": "4", "Price Per Unit": "3.0", "Total Spent": "12.0", "Payment Method": "nan", "Location": "In-store", "Transaction Date": "2023-07-17" }, { "Transaction ID": "TXN_1080432", "Item": "Salad", "Quantity": "2", "Price Per Unit": "5.0", "Total Spent": "10.0", "Payment Method": "Credit Card", "Location": "In-store", "Transaction Date": "2023-04-29" }, { "Transaction ID": "TXN_2655815", "Item": "Smoothie", "Quantity": "4", "Price Per Unit": "4.0", "Total Spent": "16.0", "Payment Method": "nan", "Location": "Takeaway", "Transaction Date": "2023-06-08" }, { "Transaction ID": "TXN_6688524", "Item": "Coffee", "Quantity": "4", "Price Per Unit": "2.0", "Total Spent": "8.0", "Payment Method": "ERROR", "Location": "nan", "Transaction Date": "2023-06-29" }, { "Transaction ID": "TXN_2083138", "Item": "Smoothie", "Quantity": "3", "Price Per Unit": "4.0", "Total Spent": "12.0", "Payment Method": "nan", "Location": "In-store", "Transaction Date": "2023-04-17" }, { "Transaction ID": "TXN_2427584", "Item": "Sandwich", "Quantity": "4", "Price Per Unit": "4.0", "Total Spent": "16.0", "Payment Method": "nan", "Location": "Takeaway", "Transaction Date": "2023-12-22" }, { "Transaction ID": "TXN_6650263", "Item": "Tea", "Quantity": "2", "Price Per Unit": "1.5", "Total Spent": "UNKNOWN", "Payment Method": "nan", "Location": "Takeaway", "Transaction Date": "2023-01-10" }, { "Transaction ID": "TXN_9620080", "Item": "Juice", "Quantity": "4", "Price Per Unit": "3.0", "Total Spent": "12.0", "Payment Method": "nan", "Location": "Takeaway", "Transaction Date": "2023-10-02" }, { "Transaction ID": "TXN_1491578", "Item": "Cookie", "Quantity": "2", "Price Per Unit": "1.0", "Total Spent": "2.0", "Payment Method": "nan", "Location": "nan", "Transaction Date": "2023-02-23" }, { "Transaction ID": "TXN_5455792", "Item": "Salad", "Quantity": "3", "Price Per Unit": "5.0", "Total Spent": "15.0", "Payment Method": "Cash", "Location": "nan", "Transaction Date": "2023-03-22" }, { "Transaction ID": "TXN_8078640", "Item": "Juice", "Quantity": "4", "Price Per Unit": "3.0", "Total Spent": "12.0", "Payment Method": "Digital Wallet", "Location": "In-store", "Transaction Date": "2023-11-03" }, { "Transaction ID": "TXN_9499313", "Item": "Juice", "Quantity": "5", "Price Per Unit": "3.0", "Total Spent": "15.0", "Payment Method": "nan", "Location": "nan", "Transaction Date": "2023-03-02" }, { "Transaction ID": "TXN_8201146", "Item": "Juice", "Quantity": "5", "Price Per Unit": "3.0", "Total Spent": "15.0", "Payment Method": "Cash", "Location": "nan", "Transaction Date": "2023-06-26" }, { "Transaction ID": "TXN_8230936", "Item": "Cake", "Quantity": "3", "Price Per Unit": "3.0", "Total Spent": "9.0", "Payment Method": "nan", "Location": "ERROR", "Transaction Date": "2023-05-02" }, { "Transaction ID": "TXN_7742742", "Item": "Cake", "Quantity": "5", "Price Per Unit": "3.0", "Total Spent": "15.0", "Payment Method": "nan", "Location": "Takeaway", "Transaction Date": "2023-09-05" }, { "Transaction ID": "TXN_6342161", "Item": "Salad", "Quantity": "5", "Price Per Unit": "5.0", "Total Spent": "25.0", "Payment Method": "ERROR", "Location": "Takeaway", "Transaction Date": "2023-01-08" }, { "Transaction ID": "TXN_8914892", "Item": "UNKNOWN", "Quantity": "5", "Price Per Unit": "5.0", "Total Spent": "25.0", "Payment Method": "Digital Wallet", "Location": "nan", "Transaction Date": "2023-03-15" }, { "Transaction ID": "TXN_3363746", "Item": "Smoothie", "Quantity": "3", "Price Per Unit": "4.0", "Total Spent": "12.0", "Payment Method": "Credit Card", "Location": "nan", "Transaction Date": "2023-11-25" }, { "Transaction ID": "TXN_8614868", "Item": "Smoothie", "Quantity": "5", "Price Per Unit": "4.0", "Total Spent": "20.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-12-05" }, { "Transaction ID": "TXN_5522862", "Item": "Cookie", "Quantity": "ERROR", "Price Per Unit": "1.0", "Total Spent": "2.0", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "2023-03-19" }, { "Transaction ID": "TXN_3578141", "Item": "Cake", "Quantity": "5", "Price Per Unit": "nan", "Total Spent": "15.0", "Payment Method": "nan", "Location": "Takeaway", "Transaction Date": "2023-06-27" }, { "Transaction ID": "TXN_2080895", "Item": "Cake", "Quantity": "UNKNOWN", "Price Per Unit": "3.0", "Total Spent": "3.0", "Payment Method": "Digital Wallet", "Location": "In-store", "Transaction Date": "2023-04-19" }, { "Transaction ID": "TXN_6421134", "Item": "Sandwich", "Quantity": "4", "Price Per Unit": "4.0", "Total Spent": "16.0", "Payment Method": "Cash", "Location": "Takeaway", "Transaction Date": "2023-11-03" }, { "Transaction ID": "TXN_8813311", "Item": "Juice", "Quantity": "5", "Price Per Unit": "3.0", "Total Spent": "15.0", "Payment Method": "nan", "Location": "In-store", "Transaction Date": "2023-10-07" }, { "Transaction ID": "TXN_9023317", "Item": "Salad", "Quantity": "1", "Price Per Unit": "5.0", "Total Spent": "5.0", "Payment Method": "nan", "Location": "nan", "Transaction Date": "2023-09-30" }, { "Transaction ID": "TXN_8051289", "Item": "nan", "Quantity": "1", "Price Per Unit": "3.0", "Total Spent": "3.0", "Payment Method": "nan", "Location": "In-store", "Transaction Date": "2023-10-09" }, { "Transaction ID": "TXN_2537617", "Item": "Sandwich", "Quantity": "1", "Price Per Unit": "4.0", "Total Spent": "4.0", "Payment Method": "Cash", "Location": "nan", "Transaction Date": "2023-05-27" }, { "Transaction ID": "TXN_9099694", "Item": "UNKNOWN", "Quantity": "3", "Price Per Unit": "5.0", "Total Spent": "15.0", "Payment Method": "nan", "Location": "Takeaway", "Transaction Date": "2023-11-18" }, { "Transaction ID": "TXN_9230615", "Item": "Smoothie", "Quantity": "4", "Price Per Unit": "4.0", "Total Spent": "16.0", "Payment Method": "Digital Wallet", "Location": "nan", "Transaction Date": "2023-06-01" }, { "Transaction ID": "TXN_4987129", "Item": "Sandwich", "Quantity": "3", "Price Per Unit": "nan", "Total Spent": "nan", "Payment Method": "nan", "Location": "In-store", "Transaction Date": "2023-10-20" }, { "Transaction ID": "TXN_8501819", "Item": "Juice", "Quantity": "nan", "Price Per Unit": "3.0", "Total Spent": "6.0", "Payment Method": "Cash", "Location": "nan", "Transaction Date": "2023-03-30" }, { "Transaction ID": "TXN_3068204", "Item": "Cookie", "Quantity": "1", "Price Per Unit": "1.0", "Total Spent": "1.0", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "2023-10-03" }, { "Transaction ID": "TXN_8427104", "Item": "Salad", "Quantity": "2", "Price Per Unit": "ERROR", "Total Spent": "10.0", "Payment Method": "nan", "Location": "In-store", "Transaction Date": "2023-10-27" }, { "Transaction ID": "TXN_8471743", "Item": "ERROR", "Quantity": "5", "Price Per Unit": "3.0", "Total Spent": "15.0", "Payment Method": "Digital Wallet", "Location": "In-store", "Transaction Date": "2023-04-06" }, { "Transaction ID": "TXN_2621580", "Item": "Tea", "Quantity": "2", "Price Per Unit": "1.5", "Total Spent": "3.0", "Payment Method": "Cash", "Location": "In-store", "Transaction Date": "2023-03-22" }, { "Transaction ID": "TXN_4726376", "Item": "Cake", "Quantity": "2", "Price Per Unit": "3.0", "Total Spent": "6.0", "Payment Method": "Credit Card", "Location": "In-store", "Transaction Date": "2023-01-31" }, { "Transaction ID": "TXN_6044979", "Item": "nan", "Quantity": "1", "Price Per Unit": "1.0", "Total Spent": "1.0", "Payment Method": "Cash", "Location": "In-store", "Transaction Date": "2023-12-08" }, { "Transaction ID": "TXN_4238417", "Item": "Salad", "Quantity": "2", "Price Per Unit": "5.0", "Total Spent": "10.0", "Payment Method": "nan", "Location": "ERROR", "Transaction Date": "2023-06-19" }, { "Transaction ID": "TXN_1900620", "Item": "Smoothie", "Quantity": "2", "Price Per Unit": "4.0", "Total Spent": "8.0", "Payment Method": "Credit Card", "Location": "ERROR", "Transaction Date": "2023-12-14" }, { "Transaction ID": "TXN_6420335", "Item": "Coffee", "Quantity": "1", "Price Per Unit": "2.0", "Total Spent": "2.0", "Payment Method": "Cash", "Location": "Takeaway", "Transaction Date": "2023-07-16" }, { "Transaction ID": "TXN_3858209", "Item": "Sandwich", "Quantity": "4", "Price Per Unit": "4.0", "Total Spent": "16.0", "Payment Method": "Cash", "Location": "nan", "Transaction Date": "2023-02-22" }, { "Transaction ID": "TXN_2091733", "Item": "Salad", "Quantity": "1", "Price Per Unit": "5.0", "Total Spent": "5.0", "Payment Method": "nan", "Location": "In-store", "Transaction Date": "nan" }, { "Transaction ID": "TXN_8735480", "Item": "Tea", "Quantity": "5", "Price Per Unit": "1.5", "Total Spent": "7.5", "Payment Method": "Cash", "Location": "nan", "Transaction Date": "2023-06-02" }, { "Transaction ID": "TXN_3829165", "Item": "Juice", "Quantity": "4", "Price Per Unit": "3.0", "Total Spent": "12.0", "Payment Method": "Cash", "Location": "In-store", "Transaction Date": "2023-06-15" }, { "Transaction ID": "TXN_3748616", "Item": "Coffee", "Quantity": "2", "Price Per Unit": "2.0", "Total Spent": "4.0", "Payment Method": "Credit Card", "Location": "In-store", "Transaction Date": "2023-12-09" }, { "Transaction ID": "TXN_1993289", "Item": "Sandwich", "Quantity": "2", "Price Per Unit": "4.0", "Total Spent": "8.0", "Payment Method": "nan", "Location": "In-store", "Transaction Date": "2023-04-18" }, { "Transaction ID": "TXN_2123367", "Item": "Cookie", "Quantity": "2", "Price Per Unit": "1.0", "Total Spent": "2.0", "Payment Method": "nan", "Location": "nan", "Transaction Date": "2023-11-07" }, { "Transaction ID": "TXN_5266394", "Item": "Cake", "Quantity": "3", "Price Per Unit": "3.0", "Total Spent": "9.0", "Payment Method": "Cash", "Location": "In-store", "Transaction Date": "2023-10-28" }, { "Transaction ID": "TXN_5107946", "Item": "Cake", "Quantity": "4", "Price Per Unit": "3.0", "Total Spent": "12.0", "Payment Method": "Credit Card", "Location": "nan", "Transaction Date": "2023-12-22" }, { "Transaction ID": "TXN_8035512", "Item": "Tea", "Quantity": "3", "Price Per Unit": "nan", "Total Spent": "4.5", "Payment Method": "Cash", "Location": "UNKNOWN", "Transaction Date": "2023-10-29" }, { "Transaction ID": "TXN_8718498", "Item": "Cake", "Quantity": "5", "Price Per Unit": "3.0", "Total Spent": "15.0", "Payment Method": "Credit Card", "Location": "ERROR", "Transaction Date": "2023-04-30" }, { "Transaction ID": "TXN_3955361", "Item": "Cookie", "Quantity": "5", "Price Per Unit": "1.0", "Total Spent": "5.0", "Payment Method": "nan", "Location": "Takeaway", "Transaction Date": "2023-04-02" }, { "Transaction ID": "TXN_9487821", "Item": "ERROR", "Quantity": "1", "Price Per Unit": "5.0", "Total Spent": "5.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-05-24" }, { "Transaction ID": "TXN_4132730", "Item": "nan", "Quantity": "5", "Price Per Unit": "1.0", "Total Spent": "5.0", "Payment Method": "nan", "Location": "In-store", "Transaction Date": "2023-03-12" }, { "Transaction ID": "TXN_8976658", "Item": "Tea", "Quantity": "2", "Price Per Unit": "1.5", "Total Spent": "3.0", "Payment Method": "Credit Card", "Location": "In-store", "Transaction Date": "2023-08-16" }, { "Transaction ID": "TXN_5455936", "Item": "UNKNOWN", "Quantity": "5", "Price Per Unit": "3.0", "Total Spent": "15.0", "Payment Method": "nan", "Location": "In-store", "Transaction Date": "2023-10-28" }, { "Transaction ID": "TXN_2725602", "Item": "Juice", "Quantity": "5", "Price Per Unit": "3.0", "Total Spent": "15.0", "Payment Method": "Credit Card", "Location": "nan", "Transaction Date": "2023-09-10" }, { "Transaction ID": "TXN_3011323", "Item": "Coffee", "Quantity": "3", "Price Per Unit": "2.0", "Total Spent": "6.0", "Payment Method": "Credit Card", "Location": "nan", "Transaction Date": "2023-03-07" }, { "Transaction ID": "TXN_6289610", "Item": "Juice", "Quantity": "3", "Price Per Unit": "3.0", "Total Spent": "UNKNOWN", "Payment Method": "Cash", "Location": "Takeaway", "Transaction Date": "2023-08-07" }, { "Transaction ID": "TXN_8268061", "Item": "Salad", "Quantity": "3", "Price Per Unit": "5.0", "Total Spent": "15.0", "Payment Method": "ERROR", "Location": "Takeaway", "Transaction Date": "2023-08-20" }, { "Transaction ID": "TXN_5220895", "Item": "Salad", "Quantity": "5", "Price Per Unit": "5.0", "Total Spent": "25.0", "Payment Method": "Cash", "Location": "In-store", "Transaction Date": "2023-06-10" }, { "Transaction ID": "TXN_3085509", "Item": "Coffee", "Quantity": "4", "Price Per Unit": "2.0", "Total Spent": "8.0", "Payment Method": "Digital Wallet", "Location": "In-store", "Transaction Date": "2023-04-15" }, { "Transaction ID": "TXN_9999113", "Item": "Juice", "Quantity": "4", "Price Per Unit": "3.0", "Total Spent": "12.0", "Payment Method": "Cash", "Location": "Takeaway", "Transaction Date": "2023-05-27" }, { "Transaction ID": "TXN_8779771", "Item": "Coffee", "Quantity": "4", "Price Per Unit": "2.0", "Total Spent": "8.0", "Payment Method": "Cash", "Location": "In-store", "Transaction Date": "2023-07-25" }];
+    const CLEAN_DATA = [{ "Transaction ID": "TXN_5728991", "Item": "Salad", "Quantity": "2", "Price Per Unit": "5.0", "Total Spent": "10.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-01" }, { "Transaction ID": "TXN_8249251", "Item": "Cake", "Quantity": "3", "Price Per Unit": "3.0", "Total Spent": "9.0", "Payment Method": "Digital Wallet", "Location": "In-store", "Transaction Date": "2023-01-01" }, { "Transaction ID": "TXN_8842223", "Item": "Sandwich", "Quantity": "5", "Price Per Unit": "4.0", "Total Spent": "20.0", "Payment Method": "Digital Wallet", "Location": "In-store", "Transaction Date": "2023-01-01" }, { "Transaction ID": "TXN_7367474", "Item": "Juice", "Quantity": "5", "Price Per Unit": "3.0", "Total Spent": "15.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-01" }, { "Transaction ID": "TXN_2192787", "Item": "Sandwich", "Quantity": "5", "Price Per Unit": "4.0", "Total Spent": "20.0", "Payment Method": "Cash", "Location": "In-store", "Transaction Date": "2023-01-01" }, { "Transaction ID": "TXN_5563675", "Item": "Tea", "Quantity": "3", "Price Per Unit": "1.5", "Total Spent": "4.5", "Payment Method": "Digital Wallet", "Location": "In-store", "Transaction Date": "2023-01-01" }, { "Transaction ID": "TXN_8308672", "Item": "Salad", "Quantity": "2", "Price Per Unit": "5.0", "Total Spent": "10.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-01" }, { "Transaction ID": "TXN_5358805", "Item": "Coffee", "Quantity": "5", "Price Per Unit": "2.0", "Total Spent": "10.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-01" }, { "Transaction ID": "TXN_2024598", "Item": "Sandwich", "Quantity": "1", "Price Per Unit": "4.0", "Total Spent": "4.0", "Payment Method": "Digital Wallet", "Location": "In-store", "Transaction Date": "2023-01-01" }, { "Transaction ID": "TXN_4292280", "Item": "Cake", "Quantity": "4", "Price Per Unit": "3.0", "Total Spent": "12.0", "Payment Method": "Cash", "Location": "Takeaway", "Transaction Date": "2023-01-01" }, { "Transaction ID": "TXN_3093284", "Item": "Coffee", "Quantity": "4", "Price Per Unit": "2.0", "Total Spent": "8.0", "Payment Method": "Digital Wallet", "Location": "In-store", "Transaction Date": "2023-01-01" }, { "Transaction ID": "TXN_6566716", "Item": "Coffee", "Quantity": "1", "Price Per Unit": "2.0", "Total Spent": "2.0", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "2023-01-01" }, { "Transaction ID": "TXN_1604072", "Item": "Coffee", "Quantity": "2", "Price Per Unit": "2.0", "Total Spent": "4.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-01" }, { "Transaction ID": "TXN_6234882", "Item": "Cookie", "Quantity": "4", "Price Per Unit": "1.0", "Total Spent": "4.0", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "2023-01-01" }, { "Transaction ID": "TXN_6093955", "Item": "Tea", "Quantity": "5", "Price Per Unit": "1.5", "Total Spent": "7.5", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-01" }, { "Transaction ID": "TXN_4801947", "Item": "Juice", "Quantity": "1", "Price Per Unit": "3.0", "Total Spent": "3.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-01" }, { "Transaction ID": "TXN_1581562", "Item": "Coffee", "Quantity": "2", "Price Per Unit": "2.0", "Total Spent": "4.0", "Payment Method": "Cash", "Location": "In-store", "Transaction Date": "2023-01-01" }, { "Transaction ID": "TXN_9161256", "Item": "Smoothie", "Quantity": "2", "Price Per Unit": "4.0", "Total Spent": "8.0", "Payment Method": "Digital Wallet", "Location": "In-store", "Transaction Date": "2023-01-01" }, { "Transaction ID": "TXN_2104473", "Item": "Cake", "Quantity": "3", "Price Per Unit": "3.0", "Total Spent": "9.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-01" }, { "Transaction ID": "TXN_7906197", "Item": "Sandwich", "Quantity": "5", "Price Per Unit": "4.0", "Total Spent": "20.0", "Payment Method": "Credit Card", "Location": "In-store", "Transaction Date": "2023-01-02" }, { "Transaction ID": "TXN_1026827", "Item": "Cookie", "Quantity": "4", "Price Per Unit": "1.0", "Total Spent": "4.0", "Payment Method": "Digital Wallet", "Location": "In-store", "Transaction Date": "2023-01-02" }, { "Transaction ID": "TXN_3410971", "Item": "Smoothie", "Quantity": "1", "Price Per Unit": "4.0", "Total Spent": "4.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-02" }, { "Transaction ID": "TXN_4893692", "Item": "Salad", "Quantity": "2", "Price Per Unit": "5.0", "Total Spent": "10.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-02" }, { "Transaction ID": "TXN_6843517", "Item": "Sandwich", "Quantity": "5", "Price Per Unit": "4.0", "Total Spent": "20.0", "Payment Method": "Credit Card", "Location": "In-store", "Transaction Date": "2023-01-02" }, { "Transaction ID": "TXN_5741619", "Item": "Smoothie", "Quantity": "5", "Price Per Unit": "4.0", "Total Spent": "20.0", "Payment Method": "Cash", "Location": "Takeaway", "Transaction Date": "2023-01-02" }, { "Transaction ID": "TXN_4258943", "Item": "Sandwich", "Quantity": "2", "Price Per Unit": "4.0", "Total Spent": "8.0", "Payment Method": "Credit Card", "Location": "In-store", "Transaction Date": "2023-01-02" }, { "Transaction ID": "TXN_1853298", "Item": "Cookie", "Quantity": "5", "Price Per Unit": "1.0", "Total Spent": "5.0", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "2023-01-02" }, { "Transaction ID": "TXN_4262142", "Item": "Cake", "Quantity": "2", "Price Per Unit": "3.0", "Total Spent": "6.0", "Payment Method": "Cash", "Location": "Takeaway", "Transaction Date": "2023-01-02" }, { "Transaction ID": "TXN_2339781", "Item": "Smoothie", "Quantity": "2", "Price Per Unit": "4.0", "Total Spent": "8.0", "Payment Method": "Digital Wallet", "Location": "In-store", "Transaction Date": "2023-01-02" }, { "Transaction ID": "TXN_6079741", "Item": "Cookie", "Quantity": "4", "Price Per Unit": "1.0", "Total Spent": "4.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-02" }, { "Transaction ID": "TXN_6935600", "Item": "Coffee", "Quantity": "3", "Price Per Unit": "2.0", "Total Spent": "6.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-02" }, { "Transaction ID": "TXN_4314314", "Item": "Cake", "Quantity": "4", "Price Per Unit": "3.0", "Total Spent": "12.0", "Payment Method": "Cash", "Location": "Takeaway", "Transaction Date": "2023-01-02" }, { "Transaction ID": "TXN_2714524", "Item": "Sandwich", "Quantity": "4", "Price Per Unit": "4.0", "Total Spent": "16.0", "Payment Method": "Cash", "Location": "Takeaway", "Transaction Date": "2023-01-02" }, { "Transaction ID": "TXN_9454387", "Item": "Salad", "Quantity": "2", "Price Per Unit": "5.0", "Total Spent": "10.0", "Payment Method": "Cash", "Location": "Takeaway", "Transaction Date": "2023-01-02" }, { "Transaction ID": "TXN_9649503", "Item": "Cake", "Quantity": "1", "Price Per Unit": "3.0", "Total Spent": "3.0", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "2023-01-02" }, { "Transaction ID": "TXN_9326761", "Item": "Tea", "Quantity": "1", "Price Per Unit": "1.5", "Total Spent": "1.5", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-02" }, { "Transaction ID": "TXN_6882503", "Item": "Tea", "Quantity": "1", "Price Per Unit": "1.5", "Total Spent": "1.5", "Payment Method": "Digital Wallet", "Location": "In-store", "Transaction Date": "2023-01-02" }, { "Transaction ID": "TXN_2575160", "Item": "Tea", "Quantity": "5", "Price Per Unit": "1.5", "Total Spent": "7.5", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-02" }, { "Transaction ID": "TXN_6368719", "Item": "Cake", "Quantity": "4", "Price Per Unit": "3.0", "Total Spent": "12.0", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "2023-01-03" }, { "Transaction ID": "TXN_6669417", "Item": "Salad", "Quantity": "5", "Price Per Unit": "5.0", "Total Spent": "25.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-03" }, { "Transaction ID": "TXN_3963927", "Item": "Sandwich", "Quantity": "4", "Price Per Unit": "4.0", "Total Spent": "16.0", "Payment Method": "Credit Card", "Location": "In-store", "Transaction Date": "2023-01-03" }, { "Transaction ID": "TXN_9728454", "Item": "Juice", "Quantity": "4", "Price Per Unit": "3.0", "Total Spent": "12.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-03" }, { "Transaction ID": "TXN_2493262", "Item": "Cookie", "Quantity": "2", "Price Per Unit": "1.0", "Total Spent": "2.0", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "2023-01-03" }, { "Transaction ID": "TXN_7686476", "Item": "Coffee", "Quantity": "3", "Price Per Unit": "2.0", "Total Spent": "6.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-03" }, { "Transaction ID": "TXN_6697669", "Item": "Cake", "Quantity": "5", "Price Per Unit": "3.0", "Total Spent": "15.0", "Payment Method": "Cash", "Location": "Takeaway", "Transaction Date": "2023-01-03" }, { "Transaction ID": "TXN_2030107", "Item": "Juice", "Quantity": "4", "Price Per Unit": "3.0", "Total Spent": "12.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-03" }, { "Transaction ID": "TXN_2377708", "Item": "Cookie", "Quantity": "1", "Price Per Unit": "1.0", "Total Spent": "1.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-03" }, { "Transaction ID": "TXN_1607471", "Item": "Sandwich", "Quantity": "2", "Price Per Unit": "4.0", "Total Spent": "8.0", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "2023-01-03" }, { "Transaction ID": "TXN_7313328", "Item": "Juice", "Quantity": "1", "Price Per Unit": "3.0", "Total Spent": "3.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-03" }, { "Transaction ID": "TXN_7355326", "Item": "Cookie", "Quantity": "1", "Price Per Unit": "1.0", "Total Spent": "1.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-03" }, { "Transaction ID": "TXN_6460409", "Item": "Salad", "Quantity": "3", "Price Per Unit": "5.0", "Total Spent": "15.0", "Payment Method": "Cash", "Location": "Takeaway", "Transaction Date": "2023-01-03" }, { "Transaction ID": "TXN_9699174", "Item": "Smoothie", "Quantity": "3", "Price Per Unit": "4.0", "Total Spent": "12.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-03" }, { "Transaction ID": "TXN_2716377", "Item": "Juice", "Quantity": "4", "Price Per Unit": "3.0", "Total Spent": "12.0", "Payment Method": "Cash", "Location": "Takeaway", "Transaction Date": "2023-01-03" }, { "Transaction ID": "TXN_3749801", "Item": "Cake", "Quantity": "5", "Price Per Unit": "3.0", "Total Spent": "15.0", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "2023-01-03" }, { "Transaction ID": "TXN_6044312", "Item": "Cake", "Quantity": "2", "Price Per Unit": "3.0", "Total Spent": "6.0", "Payment Method": "Digital Wallet", "Location": "In-store", "Transaction Date": "2023-01-03" }, { "Transaction ID": "TXN_3297457", "Item": "Cake", "Quantity": "2", "Price Per Unit": "3.0", "Total Spent": "6.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-03" }, { "Transaction ID": "TXN_9113574", "Item": "Coffee", "Quantity": "4", "Price Per Unit": "2.0", "Total Spent": "8.0", "Payment Method": "Digital Wallet", "Location": "In-store", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_4712887", "Item": "Tea", "Quantity": "5", "Price Per Unit": "1.5", "Total Spent": "7.5", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_3857768", "Item": "Coffee", "Quantity": "2", "Price Per Unit": "2.0", "Total Spent": "4.0", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_2861396", "Item": "Salad", "Quantity": "5", "Price Per Unit": "5.0", "Total Spent": "25.0", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_1411473", "Item": "Coffee", "Quantity": "3", "Price Per Unit": "2.0", "Total Spent": "6.0", "Payment Method": "Credit Card", "Location": "In-store", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_7630912", "Item": "Juice", "Quantity": "2", "Price Per Unit": "3.0", "Total Spent": "6.0", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_1082012", "Item": "Smoothie", "Quantity": "5", "Price Per Unit": "4.0", "Total Spent": "20.0", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_5788053", "Item": "Sandwich", "Quantity": "5", "Price Per Unit": "4.0", "Total Spent": "20.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_9415451", "Item": "Cake", "Quantity": "3", "Price Per Unit": "3.0", "Total Spent": "9.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_7894558", "Item": "Coffee", "Quantity": "2", "Price Per Unit": "2.0", "Total Spent": "4.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_8867957", "Item": "Sandwich", "Quantity": "1", "Price Per Unit": "4.0", "Total Spent": "4.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_9983530", "Item": "Smoothie", "Quantity": "3", "Price Per Unit": "4.0", "Total Spent": "12.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_8309656", "Item": "Sandwich", "Quantity": "3", "Price Per Unit": "4.0", "Total Spent": "12.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_5136479", "Item": "Sandwich", "Quantity": "1", "Price Per Unit": "4.0", "Total Spent": "4.0", "Payment Method": "Digital Wallet", "Location": "In-store", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_4147675", "Item": "Tea", "Quantity": "2", "Price Per Unit": "1.5", "Total Spent": "3.0", "Payment Method": "Credit Card", "Location": "In-store", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_3896128", "Item": "Cake", "Quantity": "1", "Price Per Unit": "3.0", "Total Spent": "3.0", "Payment Method": "Digital Wallet", "Location": "In-store", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_9908225", "Item": "Smoothie", "Quantity": "5", "Price Per Unit": "4.0", "Total Spent": "20.0", "Payment Method": "Credit Card", "Location": "In-store", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_3317406", "Item": "Sandwich", "Quantity": "3", "Price Per Unit": "4.0", "Total Spent": "12.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_4719069", "Item": "Juice", "Quantity": "2", "Price Per Unit": "3.0", "Total Spent": "6.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_1268811", "Item": "Salad", "Quantity": "1", "Price Per Unit": "5.0", "Total Spent": "5.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_7041367", "Item": "Cookie", "Quantity": "4", "Price Per Unit": "1.0", "Total Spent": "4.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_7708201", "Item": "Salad", "Quantity": "3", "Price Per Unit": "5.0", "Total Spent": "15.0", "Payment Method": "Cash", "Location": "Takeaway", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_9825905", "Item": "Coffee", "Quantity": "1", "Price Per Unit": "2.0", "Total Spent": "2.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_1232346", "Item": "Salad", "Quantity": "5", "Price Per Unit": "5.0", "Total Spent": "25.0", "Payment Method": "Digital Wallet", "Location": "In-store", "Transaction Date": "2023-01-04" }, { "Transaction ID": "TXN_6380550", "Item": "Coffee", "Quantity": "5", "Price Per Unit": "2.0", "Total Spent": "10.0", "Payment Method": "Cash", "Location": "In-store", "Transaction Date": "2023-01-05" }, { "Transaction ID": "TXN_4980036", "Item": "Cake", "Quantity": "2", "Price Per Unit": "3.0", "Total Spent": "6.0", "Payment Method": "Cash", "Location": "Takeaway", "Transaction Date": "2023-01-05" }, { "Transaction ID": "TXN_8852585", "Item": "Sandwich", "Quantity": "4", "Price Per Unit": "4.0", "Total Spent": "16.0", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "2023-01-05" }, { "Transaction ID": "TXN_9587884", "Item": "Tea", "Quantity": "2", "Price Per Unit": "1.5", "Total Spent": "3.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-05" }, { "Transaction ID": "TXN_1575608", "Item": "Sandwich", "Quantity": "5", "Price Per Unit": "4.0", "Total Spent": "20.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-05" }, { "Transaction ID": "TXN_9151321", "Item": "Sandwich", "Quantity": "4", "Price Per Unit": "4.0", "Total Spent": "16.0", "Payment Method": "Cash", "Location": "In-store", "Transaction Date": "2023-01-05" }, { "Transaction ID": "TXN_1840566", "Item": "Coffee", "Quantity": "4", "Price Per Unit": "2.0", "Total Spent": "8.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-05" }, { "Transaction ID": "TXN_1622123", "Item": "Cookie", "Quantity": "2", "Price Per Unit": "1.0", "Total Spent": "2.0", "Payment Method": "Cash", "Location": "Takeaway", "Transaction Date": "2023-01-05" }, { "Transaction ID": "TXN_5524352", "Item": "Sandwich", "Quantity": "1", "Price Per Unit": "4.0", "Total Spent": "4.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-05" }, { "Transaction ID": "TXN_1701500", "Item": "Smoothie", "Quantity": "1", "Price Per Unit": "4.0", "Total Spent": "4.0", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-05" }, { "Transaction ID": "TXN_3910230", "Item": "Sandwich", "Quantity": "5", "Price Per Unit": "4.0", "Total Spent": "20.0", "Payment Method": "Cash", "Location": "Takeaway", "Transaction Date": "2023-01-05" }, { "Transaction ID": "TXN_8608811", "Item": "Cake", "Quantity": "5", "Price Per Unit": "3.0", "Total Spent": "15.0", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "2023-01-05" }, { "Transaction ID": "TXN_1324968", "Item": "Cookie", "Quantity": "3", "Price Per Unit": "1.0", "Total Spent": "3.0", "Payment Method": "Credit Card", "Location": "In-store", "Transaction Date": "2023-01-05" }, { "Transaction ID": "TXN_5137315", "Item": "Salad", "Quantity": "5", "Price Per Unit": "5.0", "Total Spent": "25.0", "Payment Method": "Credit Card", "Location": "In-store", "Transaction Date": "2023-01-05" }, { "Transaction ID": "TXN_7766134", "Item": "Tea", "Quantity": "1", "Price Per Unit": "1.5", "Total Spent": "1.5", "Payment Method": "Credit Card", "Location": "Takeaway", "Transaction Date": "2023-01-05" }, { "Transaction ID": "TXN_7180164", "Item": "Sandwich", "Quantity": "5", "Price Per Unit": "4.0", "Total Spent": "20.0", "Payment Method": "Cash", "Location": "Takeaway", "Transaction Date": "2023-01-05" }, { "Transaction ID": "TXN_2044375", "Item": "Salad", "Quantity": "1", "Price Per Unit": "5.0", "Total Spent": "5.0", "Payment Method": "Cash", "Location": "Takeaway", "Transaction Date": "2023-01-05" }, { "Transaction ID": "TXN_8742689", "Item": "Tea", "Quantity": "5", "Price Per Unit": "1.5", "Total Spent": "7.5", "Payment Method": "Digital Wallet", "Location": "Takeaway", "Transaction Date": "2023-01-05" }, { "Transaction ID": "TXN_3603434", "Item": "Coffee", "Quantity": "5", "Price Per Unit": "2.0", "Total Spent": "10.0", "Payment Method": "Digital Wallet", "Location": "In-store", "Transaction Date": "2023-01-05" }, { "Transaction ID": "TXN_6455325", "Item": "Juice", "Quantity": "4", "Price Per Unit": "3.0", "Total Spent": "12.0", "Payment Method": "Credit Card", "Location": "In-store", "Transaction Date": "2023-01-05" }];
+    const DF_COLS = ['Transaction ID', 'Item', 'Quantity', 'Price Per Unit', 'Total Spent', 'Payment Method', 'Location', 'Transaction Date'];
+    const DF_BAD = new Set(['ERROR', 'UNKNOWN', '']);
+    let dfView = 'dirty', dfPage = 1, dfSort = null, dfDir = 1;
+
+    function dfGetData() { return dfView === 'dirty' ? DIRTY_DATA : CLEAN_DATA; }
+    function dfBad(v) { return DF_BAD.has(String(v).trim()); }
+
+    function dfPopFilters(data) {
+      function fill(id, key) {
+        const s = document.getElementById(id), cur = s.value;
+        if (!s) return;
+        s.innerHTML = `<option value="">All ${key}</option>`;
+        [...new Set(data.map(r => r[key]).filter(v => !dfBad(v)))].sort().forEach(v => {
+          const o = document.createElement('option'); o.value = o.textContent = v; s.appendChild(o);
+        });
+        if (cur) s.value = cur;
+      }
+      fill('dfFItem', 'Item'); fill('dfFPay', 'Payment Method'); fill('dfFLoc', 'Location');
+    }
+
+    function dfFiltered() {
+      let d = dfGetData();
+      const searchInput = document.getElementById('dfSearch');
+      const q = searchInput ? searchInput.value.toLowerCase() : '';
+      const itemInput = document.getElementById('dfFItem');
+      const fi = itemInput ? itemInput.value : '';
+      const payInput = document.getElementById('dfFPay');
+      const fp = payInput ? payInput.value : '';
+      const locInput = document.getElementById('dfFLoc');
+      const fl = locInput ? locInput.value : '';
+
+      d = d.filter(r => {
+        if (fi && r['Item'] !== fi) return false;
+        if (fp && r['Payment Method'] !== fp) return false;
+        if (fl && r['Location'] !== fl) return false;
+        if (q && !Object.values(r).join(' ').toLowerCase().includes(q)) return false;
+        return true;
+      });
+      if (dfSort !== null) {
+        const col = DF_COLS[dfSort];
+        d = [...d].sort((a, b) => String(a[col]).localeCompare(String(b[col]), undefined, { numeric: true }) * dfDir);
+      }
+      return d;
+    }
+
+    function dfRenderStats(data) {
+      const bar = document.getElementById('dfStatsBar');
+      if (!bar) return;
+      if (dfView === 'dirty') {
+        let errs = 0;
+        data.forEach(r => DF_COLS.forEach(c => { if (dfBad(r[c])) errs++; }));
+        const pct = data.length ? ((errs / (data.length * DF_COLS.length)) * 100).toFixed(1) : 0;
+        bar.innerHTML = `
+          <div class="df-stat-cell"><div class="df-stat-label">Rows</div><div class="df-stat-val">${data.length}</div></div>
+          <div class="df-stat-cell"><div class="df-stat-label">Dirty Cells</div><div class="df-stat-val ev">${errs}</div></div>
+          <div class="df-stat-cell"><div class="df-stat-label">Error Rate</div><div class="df-stat-val ev">${pct}%</div></div>
+          <div class="df-stat-cell"><div class="df-stat-label">Columns</div><div class="df-stat-val">8</div></div>
+          <div class="df-stat-cell"><div class="df-stat-label">Unique Items</div><div class="df-stat-val">${new Set(data.map(r => r['Item']).filter(v => !dfBad(v))).size}</div></div>`;
+      } else {
+        const rev = data.reduce((s, r) => s + (parseFloat(r['Total Spent']) || 0), 0);
+        bar.innerHTML = `
+          <div class="df-stat-cell"><div class="df-stat-label">Rows</div><div class="df-stat-val gv">${data.length}</div></div>
+          <div class="df-stat-cell"><div class="df-stat-label">Dirty Cells</div><div class="df-stat-val gv">0</div></div>
+          <div class="df-stat-cell"><div class="df-stat-label">Revenue</div><div class="df-stat-val gv">${rev.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div></div>
+          <div class="df-stat-cell"><div class="df-stat-label">Columns</div><div class="df-stat-val">8</div></div>
+          <div class="df-stat-cell"><div class="df-stat-label">Unique Items</div><div class="df-stat-val">${new Set(data.map(r => r['Item'])).size}</div></div>`;
+      }
+    }
+
+    function dfCellClass(col, val) {
+      if (dfView === 'dirty') return '';
+      if (col === 'Item') return 'ci';
+      if (['Quantity', 'Price Per Unit', 'Total Spent'].includes(col)) return 'cn';
+      if (col === 'Payment Method') { if (val === 'Digital Wallet') return 'cpd'; if (val === 'Cash') return 'cpc'; return 'cpp'; }
+      if (col === 'Location') return val.includes('In-store') ? 'clin' : 'clta';
+      return '';
+    }
+
+    function dfRender() {
+      const data = dfFiltered();
+      const total = data.length;
+      const pages = Math.max(1, Math.ceil(total / 25));
+
+      if (dfPage > pages) dfPage = 1;
+
+      const slice = data.slice((dfPage - 1) * 25, dfPage * 25);
+
+      const infoEl = document.getElementById('dfInfo');
+      if (infoEl) infoEl.textContent = `${slice.length} / ${total} rows`;
+
+      dfRenderStats(data);
+
+      const thead = document.getElementById('dfThead');
+      if (thead) {
+        thead.innerHTML = '';
+        const hr = thead.insertRow();
+
+        const th0 = document.createElement('th');
+        th0.textContent = '#';
+        th0.style.minWidth = '36px';
+        hr.appendChild(th0);
+
+        DF_COLS.forEach((col, ci) => {
+          const th = document.createElement('th');
+          th.textContent = col;
+          if (dfSort === ci) th.className = dfDir === 1 ? 'sa' : 'sd';
+          th.onclick = () => {
+            dfSort === ci ? dfDir *= -1 : (dfSort = ci, dfDir = 1);
+            dfPage = 1;
+            dfRender();
+          };
+          hr.appendChild(th);
+        });
+      }
+
+      const tbody = document.getElementById('dfTbody');
+      if (tbody) {
+        tbody.innerHTML = '';
+
+        if (!slice.length) {
+          const tr = tbody.insertRow();
+          const td = tr.insertCell();
+          td.colSpan = 9;
+          td.textContent = 'No matching rows';
+          td.style.cssText = 'text-align:center;color:var(--muted);padding:2rem';
+        } else {
+          const base = (dfPage - 1) * 25;
+          slice.forEach((row, ri) => {
+            const tr = tbody.insertRow();
+
+            const idx = tr.insertCell();
+            idx.className = 'df-idx';
+            idx.textContent = base + ri + 1;
+
+            DF_COLS.forEach(col => {
+              const td = tr.insertCell();
+              const val = String(row[col] ?? '');
+
+              if (dfView === 'dirty') {
+                if (val === 'ERROR' || val === 'UNKNOWN') {
+                  td.className = 'ce';
+                  td.textContent = val;
+                } else if (val.trim() === '') {
+                  td.className = 'cem';
+                  td.textContent = '(empty)';
+                } else {
+                  td.textContent = val;
+                }
+              } else {
+                if (col === 'Item') td.className = 'ci';
+                else if (['Quantity', 'Price Per Unit', 'Total Spent'].includes(col)) td.className = 'cn';
+                else if (col === 'Payment Method') {
+                  if (val === 'Digital Wallet') td.className = 'cpd';
+                  else if (val === 'Cash') td.className = 'cpc';
+                  else td.className = 'cpp';
+                } else if (col === 'Location') {
+                  td.className = val.includes('In-store') ? 'clin' : 'clta';
+                }
+
+                td.textContent = val;
+              }
+            });
+          });
+        }
+      }
+
+      const pg = document.getElementById('dfPagination');
+      if (pg) {
+        pg.innerHTML = '';
+
+        const createBtn = (lbl, p, isActive, isDisabled) => {
+          const b = document.createElement('button');
+          b.className = 'df-pb' + (isActive ? ' ap' : '');
+          b.textContent = lbl;
+          b.disabled = !!isDisabled;
+
+          if (!isDisabled && !isActive) {
+            b.onclick = () => { dfPage = p; dfRender(); };
+          }
+          return b;
+        };
+
+        pg.appendChild(createBtn('‹', dfPage - 1, false, dfPage === 1));
+
+        let s = Math.max(1, dfPage - 2);
+        let e = Math.min(pages, dfPage + 2);
+
+        if (dfPage <= 3) e = Math.min(5, pages);
+        if (dfPage >= pages - 2) s = Math.max(1, pages - 4);
+
+        if (s > 1) {
+          pg.appendChild(createBtn('1', 1, false, false));
+          if (s > 2) {
+            const sp = document.createElement('span');
+            sp.className = 'df-pi';
+            sp.textContent = '…';
+            pg.appendChild(sp);
+          }
+        }
+
+        for (let p = s; p <= e; p++) {
+          pg.appendChild(createBtn(p, p, p === dfPage, false));
+        }
+
+        if (e < pages) {
+          if (e < pages - 1) {
+            const sp = document.createElement('span');
+            sp.className = 'df-pi';
+            sp.textContent = '…';
+            pg.appendChild(sp);
+          }
+          pg.appendChild(createBtn(pages, pages, false, false));
+        }
+
+        pg.appendChild(createBtn('›', dfPage + 1, false, dfPage === pages));
+
+        const pi = document.createElement('span');
+        pi.className = 'df-pi';
+        pi.textContent = `Page ${dfPage}/${pages}`;
+        pg.appendChild(pi);
+      }
+    }
+
+    function dfSwitchView(v) {
+      dfView = v;
+      dfPage = 1;
+      dfSort = null;
+      dfDir = 1;
+
+      const btnDirty = document.getElementById('btnDirty');
+      const btnClean = document.getElementById('btnClean');
+
+      if (btnDirty) {
+        if (v === 'dirty') btnDirty.classList.add('active');
+        else btnDirty.classList.remove('active');
+      }
+
+      if (btnClean) {
+        if (v === 'clean') btnClean.classList.add('active');
+        else btnClean.classList.remove('active');
+      }
+
+      const search = document.getElementById('dfSearch');
+      if (search) search.value = '';
+
+      ['dfFItem', 'dfFPay', 'dfFLoc'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+
+      dfPopFilters(dfGetData());
+      dfRender();
+    }
+  </script>
+</body>
+
+</html>
